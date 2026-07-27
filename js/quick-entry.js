@@ -55,6 +55,10 @@ const QE_ACCOUNT_KEYWORDS = [
   ['4002', [/수수료\s*수익/, /수수료\s*매출/, /commission(?!\s*paid)/i, /broker/i, /수수료(?!\s*지급)/]],
   ['4001', [/매출(?!채권)(?!원가)(?!세)/, /\bsales\b/i, /제품판매/]],
   ['4003', [/기타\s*수익/, /이자\s*수익/, /interest\s*income/i, /\bother\s*income\b/i, /환차익/, /forex\s*gain/i]],
+  // Liabilities (checked before generic cash/bank so "미지급" wins)
+  ['2005', [/미지급\s*급여/, /급여\s*미지급/, /salary\s*payable/i, /unpaid\s*salary/i, /accrued\s*salary/i]],
+  ['2003', [/미지급\s*비용/, /accrued\s*expense/i]],
+  ['2001', [/매입\s*채무/, /accounts\s*payable/i]],
   // Cash / Bank (checked LAST so expense keywords win)
   ['1001', [/현금(?!\s*\d)/, /\bcash\b/i, /petty\s*cash/i]],
   ['1002', [/(?:은행)(?!\s*수수료)/, /maybank/i, /cimb/i, /\brhb\b/i, /public\s*bank/i, /hong\s*leong/i, /계좌/]],
@@ -195,6 +199,37 @@ function _accByCode(prefId, fallbackCode) {
   return acc ? {code: acc.code, id: acc.id, name: acc.nameEn||acc.nameKr} : null;
 }
 
+// ── Journal (수동 분개): detect a DEBIT + CREDIT account pair from one line ──
+// Scans every keyword pattern (no type restriction) and picks the two accounts
+// most likely intended, using natural debit/credit side by account type
+// (asset/expense increase on debit, liability/equity/revenue increase on credit).
+function qeDetectJournalAccounts(line) {
+  const found = [];
+  for (const [code, patterns] of QE_ACCOUNT_KEYWORDS) {
+    for (const p of patterns) {
+      const m = line.match(p);
+      if (m) {
+        const acc = DB.accounts.find(a => a.code === code);
+        if (acc) found.push({code, id: acc.id, name: acc.nameEn||acc.nameKr, type: acc.type, pos: m.index});
+        break;  // one hit per code is enough
+      }
+    }
+  }
+  found.sort((a,b)=>a.pos-b.pos);
+
+  const side = t => (t==='asset'||t==='expense') ? 'debit' : (t==='liability'||t==='equity'||t==='revenue') ? 'credit' : null;
+
+  if (found.length >= 2) {
+    const debitCand = found.find(m => side(m.type)==='debit');
+    const creditCand = found.find(m => side(m.type)==='credit' && m.code !== debitCand?.code);
+    if (debitCand && creditCand) return {debit: debitCand, credit: creditCand};
+    // Both landed on the same natural side — fall back to left-to-right order in the text
+    return {debit: found[0], credit: found[1]};
+  }
+  if (found.length === 1) return {debit: found[0], credit: null};
+  return {debit: null, credit: null};
+}
+
 // ── Party Detection (Customer/Supplier name) ─────────
 function qeDetectParty(line, type) {
   // Strip known noise: date strings, amounts, type prefix, journal-related words
@@ -279,7 +314,13 @@ function qeParseLine(line, idx) {
   const date = qeExtractDate(line);
   const amount = qeExtractAmount(line);
   const typeInfo = qeDetectType(line);
-  const account = qeDetectAccount(line, typeInfo.type);
+  let account = qeDetectAccount(line, typeInfo.type);
+  let creditAccount = null;
+  if (typeInfo.type === 'journal') {
+    const ja = qeDetectJournalAccounts(line);
+    account = ja.debit;
+    creditAccount = ja.credit;
+  }
   const party = qeDetectParty(line, typeInfo.type);
   const cashOrBank = qeDetectCashOrBank(line);
   const knockoff = qeExtractKnockoff(line);
@@ -302,12 +343,14 @@ function qeParseLine(line, idx) {
   if (typeInfo.type==='unknown') warnings.push('거래 유형 자동 분류 실패 — 직접 선택하세요');
   if ((typeInfo.type==='sales'||typeInfo.type==='receipt'||typeInfo.type==='purchase'||typeInfo.type==='payment') && (!party || party.autoCreated))
     warnings.push('거래처 자동 생성 예정 — 확인 필요');
+  if (typeInfo.type==='journal' && (!account || !creditAccount))
+    warnings.push('차변/대변 계정을 자동으로 다 찾지 못했습니다 — 직접 선택하세요');
   if (typeInfo.confidence < 0.6) warnings.push('자동 분류 신뢰도 낮음');
 
   return {
     idx, raw: line, number,
     type: typeInfo.type, confidence: typeInfo.confidence, explicit: !!typeInfo.explicit,
-    date, amount, account, party, cashOrBank, knockoff, description,
+    date, amount, account, creditAccount, party, cashOrBank, knockoff, description,
     warnings,
   };
 }
@@ -390,9 +433,18 @@ function renderQEPreview() {
       <td style="padding:.4rem"><input type="number" class="input qe-amount" data-idx="${i}" value="${r.amount}" step="0.01" style="font-size:.78rem;padding:.25rem;width:100px;text-align:right"></td>
       <td style="padding:.4rem">${partyHTML}</td>
       <td style="padding:.4rem">
+        ${r.type==='journal' ? `
+        <div style="display:flex;flex-direction:column;gap:.25rem">
+          <select class="input qe-account" data-idx="${i}" style="font-size:.72rem;padding:.2rem;width:190px">
+            <option value="">DR 차변 계정</option>${allAccountOptions}
+          </select>
+          <select class="input qe-credit-account" data-idx="${i}" style="font-size:.72rem;padding:.2rem;width:190px">
+            <option value="">CR 대변 계정</option>${allAccountOptions}
+          </select>
+        </div>` : `
         <select class="input qe-account" data-idx="${i}" style="font-size:.78rem;padding:.25rem;width:200px">
           ${allAccountOptions}
-        </select>
+        </select>`}
       </td>
       <td style="padding:.4rem"><input type="text" class="input qe-knockoff" data-idx="${i}" value="${r.knockoff||''}" placeholder="INV번호" style="font-size:.78rem;padding:.25rem;width:110px;font-family:monospace"></td>
       <td style="padding:.4rem"><button class="btn btn-sm btn-danger" onclick="removeQERow(${i})">✕</button></td>
@@ -432,6 +484,10 @@ function renderQEPreview() {
       const sel = document.querySelector(`select.qe-account[data-idx="${i}"]`);
       if (sel) sel.value = r.account.id;
     }
+    if (r.creditAccount && r.creditAccount.id) {
+      const csel = document.querySelector(`select.qe-credit-account[data-idx="${i}"]`);
+      if (csel) csel.value = r.creditAccount.id;
+    }
   });
 }
 
@@ -440,13 +496,17 @@ function onQETypeChange(idx) {
   const type = sel.value;
   _qeParsed[idx].type = type;
   // Re-suggest defaults (account, party list)
-  const newAcc = qeDetectAccount(_qeParsed[idx].raw, type);
-  if (newAcc) {
-    _qeParsed[idx].account = newAcc;
-    const acsel = document.querySelector(`select.qe-account[data-idx="${idx}"]`);
-    if (acsel) acsel.value = newAcc.id;
+  if (type === 'journal') {
+    const ja = qeDetectJournalAccounts(_qeParsed[idx].raw);
+    _qeParsed[idx].account = ja.debit;
+    _qeParsed[idx].creditAccount = ja.credit;
+  } else {
+    const newAcc = qeDetectAccount(_qeParsed[idx].raw, type);
+    if (newAcc) _qeParsed[idx].account = newAcc;
+    _qeParsed[idx].creditAccount = null;
   }
-  // Re-render party cell to switch between customer/supplier list
+  // Re-render (also switches party cell between customer/supplier list, and
+  // account cell between single/DR+CR layout)
   renderQEPreview();
 }
 
@@ -476,12 +536,13 @@ function commitQuickEntries() {
     const date = document.querySelector(`.qe-date[data-idx="${i}"]`).value;
     const amount = Number(document.querySelector(`.qe-amount[data-idx="${i}"]`).value||0);
     const accountId = document.querySelector(`.qe-account[data-idx="${i}"]`)?.value || '';
+    const creditAccountId = document.querySelector(`.qe-credit-account[data-idx="${i}"]`)?.value || '';
     const partySel = document.querySelector(`.qe-party[data-idx="${i}"]`);
     const partyNewInput = document.querySelector(`.qe-party-new[data-idx="${i}"]`);
     let partyId = partySel?.value || '';
     let partyNewName = partyNewInput?.value?.trim() || r.party?.name || '';
     const knockoff = document.querySelector(`.qe-knockoff[data-idx="${i}"]`)?.value?.trim() || '';
-    return {...r, type, number, date, amount, accountId, partyId, partyNewName, knockoff};
+    return {...r, type, number, date, amount, accountId, creditAccountId, partyId, partyNewName, knockoff};
   });
 
   // Validate
@@ -490,6 +551,8 @@ function commitQuickEntries() {
     if (!r.date) errors.push(`#${i+1}: 일자 누락`);
     if (!r.amount) errors.push(`#${i+1}: 금액이 0`);
     if (r.type==='unknown') errors.push(`#${i+1}: 거래 유형 미선택`);
+    if (r.type==='journal' && (!r.accountId || !r.creditAccountId)) errors.push(`#${i+1}: 분개는 차변/대변 계정이 모두 필요합니다`);
+    if (r.type==='journal' && r.accountId && r.accountId===r.creditAccountId) errors.push(`#${i+1}: 차변과 대변 계정이 같습니다`);
   });
   if (errors.length) {
     alert('등록 불가:\n' + errors.join('\n'));
@@ -614,8 +677,22 @@ function commitQuickEntries() {
         stats.expense++;
       }
       else if (r.type==='journal') {
-        // Plain manual journal — single line will not balance, so wrap as a placeholder needing editing
-        stats.errors.push(`#${r.idx+1}: 수동 분개는 Journal Entry 메뉴에서 직접 입력하세요 (DR/CR 양쪽 모두 필요)`);
+        // Manual journal: DR account (r.accountId) / CR account (r.creditAccountId),
+        // both auto-detected from keywords (e.g. "급여" + "미지급급여") or picked in the preview.
+        const drAcc = DB.accounts.find(a=>a.id===r.accountId);
+        const crAcc = DB.accounts.find(a=>a.id===r.creditAccountId);
+        if (!drAcc || !crAcc) { stats.errors.push(`#${r.idx+1}: 차변/대변 계정 누락`); continue; }
+        DB.entries.push({
+          id: uid(), date: r.date,
+          reference: r.number,
+          description: r.description,
+          lines: [
+            {accountId: drAcc.id, debit: r.amount, credit: 0},
+            {accountId: crAcc.id, debit: 0, credit: r.amount},
+          ],
+          source: 'manual',
+        });
+        stats.journal++;
       }
     } catch (err) {
       console.error(err);
@@ -634,6 +711,7 @@ function commitQuickEntries() {
     `매입송장: ${stats.purchase}건`,
     `공급업체 지급: ${stats.payment}건`,
     `직접경비: ${stats.expense}건`,
+    `수동 분개: ${stats.journal}건`,
     stats.custCreated ? `신규 고객 생성: ${stats.custCreated}` : '',
     stats.suppCreated ? `신규 공급업체 생성: ${stats.suppCreated}` : '',
     stats.errors.length ? `\n⚠ 오류 ${stats.errors.length}건:\n${stats.errors.join('\n')}` : '',

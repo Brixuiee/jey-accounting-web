@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEY &amp; Company SB — Accounting System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1a3c5e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JEY Accounting">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW reg failed:', e));
+      });
+    }
+  </script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <div class="company-logo">J</div>
+      <div>
+        <div class="company-name">JEY &amp; Company SB</div>
+        <div class="company-sub">Accounting System</div>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li><a href="#" class="nav-link active" data-section="dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </a></li>
+
+      <li><a href="#" class="nav-link" data-section="quick-entry" style="background:linear-gradient(90deg,#fef3c7,transparent);font-weight:600">
+        <span class="nav-icon">⚡</span> Quick Entry / 빠른입력
+      </a></li>
+
+      <li><a href="#" class="nav-link" data-section="bank-statement" style="background:linear-gradient(90deg,#dbeafe,transparent);font-weight:600">
+        <span class="nav-icon">🏦</span> Bank Statement / 은행명세서
+      </a></li>
+
+      <li><a href="#" class="nav-link" data-section="pending" style="background:linear-gradient(90deg,#fce7f3,transparent);font-weight:600">
+        <span class="nav-icon">⏸️</span> 미결거래 (Pending)
+      </a></li>
+
+      <li class="nav-group-label">General Ledger</li>
+      <li><a href="#" class="nav-link" data-section="accounts">
+        <span class="nav-icon">📋</span> Chart of Accounts
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="journal">
+        <span class="nav-icon">📝</span> Journal Entry
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ledger">
+        <span class="nav-icon">📒</span> General Ledger
+      </a></li>
+
+      <li class="nav-group-label">Accounts Receivable</li>
+      <li><a href="#" class="nav-link" data-section="ar-customers">
+        <span class="nav-icon">👥</span> Customers
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ar-invoices">
+        <span class="nav-icon">🧾</span> Sales Invoices
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ar-receipts">
+        <span class="nav-icon">💳</span> Customer Receipts
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ar-aging">
+        <span class="nav-icon">📅</span> AR Aging
+      </a></li>
+
+      <li class="nav-group-label">Accounts Payable</li>
+      <li><a href="#" class="nav-link" data-section="ap-suppliers">
+        <span class="nav-icon">🏭</span> Suppliers
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ap-bills">
+        <span class="nav-icon">📄</span> Purchase Invoices
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ap-payments">
+        <span class="nav-icon">💸</span> Supplier Payments
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ap-aging">
+        <span class="nav-icon">📅</span> AP Aging
+      </a></li>
+
+      <li class="nav-group-label">Others</li>
+      <li><a href="#" class="nav-link" data-section="assets">
+        <span class="nav-icon">🏢</span> Fixed Assets
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="asset-register">
+        <span class="nav-icon">📋</span> Asset Register
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="sst">
+        <span class="nav-icon">🏛️</span> SST Summary
+      </a></li>
+
+      <li class="nav-group-label">Tax / 세무</li>
+      <li><a href="#" class="nav-link" data-section="tax-cp58">
+        <span class="nav-icon">📋</span> CP58 (수수료신고)
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="tax-computation">
+        <span class="nav-icon">💼</span> Income Tax (법인세)
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="tax-calendar">
+        <span class="nav-icon">📅</span> Tax Calendar (세무일정)
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="tax-wht">
+        <span class="nav-icon">🏛️</span> Withholding Tax (원천징수)
+      </a></li>
+
+      <li class="nav-group-label">Reports</li>
+      <li><a href="#" class="nav-link" data-section="pl">
+        <span class="nav-icon">📈</span> Profit &amp; Loss
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="bs">
+        <span class="nav-icon">⚖️</span> Balance Sheet
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="trial">
+        <span class="nav-icon">🔢</span> Trial Balance
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="ratios">
+        <span class="nav-icon">📈</span> Financial Ratios
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="closing">
+        <span class="nav-icon">🔒</span> Year-End Closing
+      </a></li>
+
+      <li class="nav-group-label">Payroll / 급여</li>
+      <li><a href="#" class="nav-link" data-section="employees">
+        <span class="nav-icon">👤</span> Employees
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="payroll-run">
+        <span class="nav-icon">💵</span> Payroll Run
+      </a></li>
+
+      <li class="nav-group-label">Forex / 외환</li>
+      <li><a href="#" class="nav-link" data-section="forex">
+        <span class="nav-icon">💱</span> Exchange Rates
+      </a></li>
+
+      <li class="nav-group-label">System</li>
+      <li><a href="#" class="nav-link" data-section="import">
+        <span class="nav-icon">📥</span> Import / Backup
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="cloud-backup">
+        <span class="nav-icon">☁️</span> Cloud Backup
+      </a></li>
+      <li><a href="#" class="nav-link" data-section="users">
+        <span class="nav-icon">👥</span> User Management
+      </a></li>
+    </ul>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main id="main-content">
+
+    <!-- DASHBOARD -->
+    <section id="section-dashboard" class="section active">
+      <div class="section-header">
+        <h1>Dashboard</h1>
+        <span class="period-badge" id="dash-period"></span>
+      </div>
+      <div class="cards-grid" id="dash-cards"></div>
+      <div class="dash-grid">
+        <div class="card">
+          <h3>Outstanding Receivables</h3>
+          <div id="dash-ar-summary" style="margin-top:.75rem"></div>
+        </div>
+        <div class="card">
+          <h3>Monthly Net P&amp;L (Last 6 Months)</h3>
+          <div id="dash-monthly-chart" class="mini-chart"></div>
+        </div>
+        <div class="card">
+          <h3>Recent Journal Entries</h3>
+          <table class="table" id="dash-recent-entries">
+            <thead><tr><th>Date</th><th>Description</th><th class="num">Amount (MYR)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>Overdue AP Bills</h3>
+          <div id="dash-ap-overdue" style="margin-top:.75rem"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK ENTRY -->
+    <section id="section-quick-entry" class="section">
+      <div class="section-header">
+        <h1>⚡ Quick Entry / 빠른 입력</h1>
+        <button class="btn btn-outline btn-sm" onclick="loadQuickEntryExample()">샘플 불러오기</button>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#fef3c7,#fffbeb);border-left:4px solid #d97706">
+        <h3 style="font-size:1rem;margin-bottom:.4rem">한 곳에 자유롭게 적어주세요 — 시스템이 알아서 분류합니다</h3>
+        <p style="font-size:.82rem;color:#92400e;line-height:1.6">
+          한 줄에 한 거래씩 자유롭게 적기만 하면 자동으로 <strong>유형(매출/수령/매입/지급/경비) · 일자 · 금액 · 거래처 · 계정과목 · 품번</strong>을 추출합니다.
+          이후 <strong>Preview 화면</strong>에서 관리자가 모든 항목을 수정한 뒤 <strong>Confirm</strong> 누르면 정식 등록되고, 등록 후에도 일반 메뉴(Sales Invoices, Receipts 등)에서 수정 가능합니다.
+        </p>
+      </div>
+
+      <!-- 모드 탭 -->
+      <div class="card" style="margin-top:1rem;padding:0;overflow:hidden">
+        <div class="qe-tabs" style="display:flex;border-bottom:1px solid var(--border);background:#f8fafc">
+          <button id="qe-tab-grid" class="qe-tab qe-tab-active" onclick="switchQEMode('grid')" style="flex:1;padding:.85rem;border:none;background:transparent;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--primary);border-bottom:3px solid var(--primary)">
+            📊 양식 입력 (Grid Form)
+          </button>
+          <button id="qe-tab-text" class="qe-tab" onclick="switchQEMode('text')" style="flex:1;padding:.85rem;border:none;background:transparent;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text-muted);border-bottom:3px solid transparent">
+            📝 자유 텍스트 (Free Text)
+          </button>
+        </div>
+
+        <!-- ===== 양식 입력 모드 (Grid) ===== -->
+        <div id="qe-mode-grid" style="padding:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+            <div style="font-size:.82rem;color:var(--text-muted)">
+              💡 각 행을 빈 칸으로 두면 자동 추정합니다. <strong>거래처/메모</strong> 칸에 키워드를 입력하면 <strong>구분·계정과목</strong>도 자동 제안됩니다.
+            </div>
+            <div style="font-size:.72rem;color:var(--text-muted)">
+              <kbd style="background:#f1f5f9;padding:.1rem .3rem;border-radius:3px;border:1px solid #cbd5e1">Tab</kbd>으로 다음 칸 이동
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="table" id="qe-grid-table" style="font-size:.82rem;min-width:1100px">
+              <thead style="background:#f1f5f9;font-size:.74rem">
+                <tr>
+                  <th style="width:30px">#</th>
+                  <th style="width:130px">날짜 <span style="color:#dc2626">*</span></th>
+                  <th style="width:130px">구분 <span style="color:#dc2626">*</span></th>
+                  <th style="min-width:200px">거래처 / 메모 <span style="color:#dc2626">*</span></th>
+                  <th style="width:120px" class="num">금액 (MYR) *</th>
+                  <th style="min-width:200px">계정과목</th>
+                  <th style="width:130px">Knock-off 송장</th>
+                  <th style="width:40px"></th>
+                </tr>
+              </thead>
+              <tbody id="qe-grid-body"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:.5rem;display:flex;gap:.5rem;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-outline btn-sm" onclick="addQEGridRow()">+ 행 추가</button>
+              <button class="btn btn-outline btn-sm" onclick="addQEGridRow();addQEGridRow();addQEGridRow();addQEGridRow();addQEGridRow()">+ 5행</button>
+              <button class="btn btn-outline btn-sm" onclick="clearQEGrid()" style="color:var(--danger)">전체 지우기</button>
+            </div>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <span style="font-size:.75rem;color:var(--text-muted)" id="qe-grid-count">0행</span>
+              <button class="btn btn-primary" onclick="parseQEGrid()">⚡ 분석 (Parse)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 자유 텍스트 모드 ===== -->
+        <div id="qe-mode-text" style="padding:1rem;display:none">
+          <div style="font-size:.82rem;color:var(--text-muted);margin-bottom:.5rem">
+            한 줄에 한 거래씩 자유롭게 적기. <code style="background:#f1f5f9;padding:.1rem .3rem;border-radius:3px">2025-07-15 ABC 수수료 8000 외상</code>
+          </div>
+          <textarea id="qe-input" class="input" rows="10" placeholder="2025-07-15 ABC Sdn Bhd 7월 수수료 청구 MYR 8,000 외상
+2025-07-16 ABC 입금 받음 8000 INV202507001
+2025-07-20 Landlord Co 임차료 청구서 1,500
+2025-07-31 임차료 지급 1500 Landlord
+2025-07-31 Celcom 통신비 150 은행
+
+# (#) 으로 시작하는 줄은 주석으로 무시됩니다
+# 강제 유형 지정: [매출], [수령], [매입], [지급], [경비]
+[매출] 2025-08-01 새 고객 9500"
+            style="font-family:'SF Mono','Monaco',monospace;font-size:.85rem;line-height:1.6;width:100%;resize:vertical"></textarea>
+          <div style="margin-top:.5rem;display:flex;gap:.5rem;justify-content:space-between;align-items:center">
+            <div style="font-size:.72rem;color:var(--text-muted)">
+              📌 키워드: <strong>수수료/매출</strong>→Sales · <strong>입금/수령</strong>→Receipt · <strong>매입/청구서</strong>→Purchase · <strong>지급/송금</strong>→Payment · <strong>통신비/임차료</strong>→Expense
+            </div>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-outline" onclick="document.getElementById('qe-input').value=''">지우기</button>
+              <button class="btn btn-primary" onclick="parseQuickEntries()">⚡ 분석 (Parse)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="qe-preview"></div>
+
+      <div class="card" style="margin-top:1rem">
+        <h3 style="margin-bottom:.5rem;font-size:.95rem">📖 입력 형식 가이드</h3>
+        <table class="table" style="font-size:.78rem">
+          <thead><tr><th>거래 유형</th><th>한국어 키워드</th><th>영어 키워드</th><th>예시 입력</th></tr></thead>
+          <tbody>
+            <tr><td><strong>판매송장</strong> (Sales)</td><td>수수료, 매출, 청구, 외상</td><td>commission, sales, invoice, billed</td><td><code>7월 15일 ABC 수수료 8000 외상</code></td></tr>
+            <tr><td><strong>고객 수령</strong> (Receipt)</td><td>입금, 수령, 수금, 회수</td><td>received, receipt, deposit</td><td><code>2025-07-16 ABC 입금 8000 INV202507001</code></td></tr>
+            <tr><td><strong>매입송장</strong> (Purchase)</td><td>매입, 청구서 받음</td><td>purchase, bill from</td><td><code>2025-07-20 Landlord 임차료 청구서 1500</code></td></tr>
+            <tr><td><strong>공급업체 지급</strong> (Payment)</td><td>지급, 송금, 결제</td><td>paid, payment, transfer</td><td><code>2025-07-31 임차료 지급 1500 Landlord</code></td></tr>
+            <tr><td><strong>직접경비</strong> (Cash/Bank)</td><td>통신비/임차료/공과금 + 은행/현금</td><td>utilities/rent/bank charge</td><td><code>2025-07-31 Celcom 통신비 150 은행</code></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:.74rem;color:var(--text-muted);margin-top:.5rem">
+          💡 <strong>Knock-off (송장 매칭):</strong> Receipt나 Payment에 송장번호(INV/PV 등)를 적으면 자동으로 해당 송장에 할당됩니다 — 예: <code>ABC 입금 8000 INV202507001</code>
+        </p>
+      </div>
+    </section>
+
+    <!-- PENDING ENTRIES -->
+    <section id="section-pending" class="section">
+      <div class="section-header">
+        <h1>⏸️ 미결거래 / Pending Transactions</h1>
+        <button class="btn btn-primary" onclick="openPendingModal()">+ 미결 추가</button>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#fce7f3,#fdf2f8);border-left:4px solid #db2777;margin-bottom:1rem">
+        <p style="font-size:.82rem;color:#9d174d;line-height:1.6">
+          장부 반영 여부를 아직 결정하지 못한 거래를 임시 보관합니다.
+          재무제표에는 반영되지 않으며, 추후 <strong>승인</strong> 시 장부에 등록됩니다.
+        </p>
+      </div>
+      <div id="pending-list"></div>
+    </section>
+
+    <!-- BANK STATEMENT -->
+    <section id="section-bank-statement" class="section">
+      <div class="section-header">
+        <h1>🏦 Bank Statement / 은행 명세서</h1>
+        <button class="btn btn-outline btn-sm" onclick="loadBSExample()">샘플 불러오기</button>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#dbeafe,#eff6ff);border-left:4px solid #2563a8">
+        <h3 style="font-size:1rem;margin-bottom:.4rem">은행 명세서를 한 곳에서 처리</h3>
+        <p style="font-size:.82rem;color:#1e40af;line-height:1.6">
+          은행에서 받은 CSV 명세서를 업로드하면 시스템이 각 라인을 자동 분류 → Receipt/Payment/비용분개로 일괄 등록.
+          <strong>이미 입력된 거래는 자동 매칭</strong>되어 중복 방지. <strong>잔액 대조</strong>도 자동.
+        </p>
+      </div>
+
+      <div class="card" style="margin-top:1rem">
+        <h3 style="margin-bottom:.75rem">1단계 — 은행 계정 및 CSV 입력</h3>
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:1rem;margin-bottom:1rem">
+          <div class="form-group">
+            <label>은행 계정 *</label>
+            <select id="bs-bank-account" class="input" onchange="_bsBankAccId=this.value">
+              <option value="">-- 선택 --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>CSV 파일 업로드</label>
+            <label class="btn btn-outline" style="cursor:pointer;display:inline-block">
+              📁 CSV 파일 선택
+              <input type="file" accept=".csv,.txt" style="display:none" onchange="onBSFileChange(event)">
+            </label>
+            <span style="font-size:.72rem;color:var(--text-muted);margin-left:.5rem">또는 아래에 직접 붙여넣기 ↓</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>또는 명세서 텍스트 붙여넣기 (CSV/TSV 형식)</label>
+          <textarea id="bs-paste-area" class="input" rows="8" placeholder="Date,Description,Withdrawal,Deposit,Balance
+2025-07-05,IBFT FROM ABC SDN BHD,0,5000.00,20000.00
+2025-07-08,SERVICE CHARGE,5.00,0,19995.00
+2025-07-10,IBFT TO LANDLORD CO,1500.00,0,18495.00
+2025-07-15,CELCOM DIRECT DEBIT,150.00,0,18345.00
+..."
+            style="font-family:'SF Mono','Monaco',monospace;font-size:.82rem;line-height:1.5"></textarea>
+          <div style="margin-top:.5rem;display:flex;gap:.5rem;justify-content:flex-end">
+            <button class="btn btn-outline" onclick="document.getElementById('bs-paste-area').value=''">지우기</button>
+            <button class="btn btn-primary" onclick="onBSPaste()">⚡ 분석 시작</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="bs-preview"></div>
+
+      <div class="card" style="margin-top:1rem">
+        <h3 style="font-size:.95rem;margin-bottom:.5rem">📖 지원하는 CSV 형식</h3>
+        <p style="font-size:.78rem;color:var(--text-muted);line-height:1.7">
+          헤더 행에 다음 컬럼이 있으면 자동 인식 (대소문자 무관):
+        </p>
+        <ul style="font-size:.78rem;color:var(--text-muted);padding-left:1.5rem;line-height:1.8">
+          <li><strong>Date</strong> — Date / Tarikh / Transaction Date / Value Date</li>
+          <li><strong>Description</strong> — Description / Particulars / Narration / Remarks</li>
+          <li><strong>Withdrawal</strong> (출금) — Withdrawal / Debit / DR / Out</li>
+          <li><strong>Deposit</strong> (입금) — Deposit / Credit / CR / In</li>
+          <li><strong>Balance</strong> (선택) — Balance / Baki / Running Balance</li>
+          <li><strong>Reference</strong> (선택) — Ref No / Cheque No / Transaction Ref</li>
+        </ul>
+        <p style="font-size:.78rem;color:var(--text-muted);line-height:1.7;margin-top:.5rem">
+          <strong>지원 은행:</strong> Maybank, CIMB, Public Bank, RHB, Hong Leong, AmBank 등 — 표준 CSV export 호환.
+          출금/입금이 한 컬럼(Amount)으로 합쳐진 경우(음수=출금) 자동 인식.
+        </p>
+        <h3 style="font-size:.95rem;margin:1rem 0 .5rem">🧠 자동 분류 규칙</h3>
+        <table class="table" style="font-size:.78rem">
+          <thead><tr><th>은행 명세서 패턴</th><th>자동 분류</th><th>제안 계정</th></tr></thead>
+          <tbody>
+            <tr><td>입금 + 고객명 매칭</td><td>고객 수령 (Receipt)</td><td>잔액 일치 송장 자동 knock-off</td></tr>
+            <tr><td>출금 + 공급업체명 매칭</td><td>공급업체 지급 (Payment)</td><td>잔액 일치 매입송장 자동 knock-off</td></tr>
+            <tr><td>"Service Charge", "Monthly Fee", "Bank Charge"</td><td>비용 분개</td><td>5009 은행수수료</td></tr>
+            <tr><td>"Celcom", "Digi", "Maxis", "Unifi", "TM"</td><td>비용 분개</td><td>5006 통신비</td></tr>
+            <tr><td>"TNB", "Tenaga", "Indah Water", "Sewerage"</td><td>비용 분개</td><td>5004 공과금</td></tr>
+            <tr><td>"Payroll", "Salary", "급여"</td><td>비용 분개</td><td>5002 급여</td></tr>
+            <tr><td>"Rent", "Rental", "임차료"</td><td>비용 분개</td><td>5003 임차료</td></tr>
+            <tr><td>"Interest", "이자"</td><td>수익 분개</td><td>4003 기타수익</td></tr>
+            <tr><td>"Transfer", "이체"</td><td>계좌 이체</td><td>상대 계정 직접 선택</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:.78rem;color:#166534;line-height:1.7;margin-top:.5rem;background:#f0fdf4;padding:.5rem;border-radius:4px">
+          ✓ <strong>이미 입력된 거래는 자동 매칭:</strong> 같은 은행 계정 · 날짜(±2일) · 동일 금액의 Receipt/Payment/Journal이 있으면 녹색으로 표시하고 자동으로 건너뜁니다. 중복 입력 걱정 없음.
+        </p>
+      </div>
+    </section>
+
+    <!-- CHART OF ACCOUNTS -->
+    <section id="section-accounts" class="section">
+      <div class="section-header">
+        <h1>Chart of Accounts</h1>
+        <button class="btn btn-primary" onclick="openAccountModal()">+ Add Account</button>
+      </div>
+      <div class="account-groups" id="account-groups"></div>
+    </section>
+
+    <!-- JOURNAL ENTRY -->
+    <section id="section-journal" class="section">
+      <div class="section-header">
+        <h1>Journal Entry</h1>
+        <button class="btn btn-primary" onclick="openJournalModal()">+ New Entry</button>
+      </div>
+      <div class="filter-bar">
+        <input type="month" id="journal-filter-month" class="input" onchange="renderJournal()" style="width:160px">
+        <input type="text" id="journal-search" class="input" placeholder="Search description / reference..." oninput="renderJournal()" style="width:260px">
+        <label style="display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--text-muted)">
+          <input type="checkbox" id="journal-show-auto" onchange="renderJournal()"> Show auto-entries
+        </label>
+      </div>
+      <div class="card">
+        <table class="table" id="journal-table">
+          <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Source</th><th class="num">DR</th><th class="num">CR</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- GENERAL LEDGER -->
+    <section id="section-ledger" class="section">
+      <div class="section-header"><h1>General Ledger</h1></div>
+      <div class="filter-bar">
+        <select id="ledger-account" class="input" onchange="renderLedger()" style="width:280px">
+          <option value="">-- Select Account --</option>
+        </select>
+        <input type="month" id="ledger-from" class="input" onchange="renderLedger()" style="width:140px">
+        <span style="color:var(--text-muted)">to</span>
+        <input type="month" id="ledger-to" class="input" onchange="renderLedger()" style="width:140px">
+      </div>
+      <div class="card" id="ledger-content"><p class="empty-msg">Select an account to view ledger.</p></div>
+    </section>
+
+    <!-- AR: CUSTOMERS -->
+    <section id="section-ar-customers" class="section">
+      <div class="section-header">
+        <h1>Customers</h1>
+        <button class="btn btn-primary" onclick="openCustomerModal()">+ Add Customer</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" id="customer-search" class="input" placeholder="Search name / code..." oninput="renderCustomers()" style="width:260px">
+      </div>
+      <div class="card">
+        <table class="table" id="customers-table">
+          <thead><tr><th>Code</th><th>Customer Name</th><th>Contact</th><th>Credit Limit (MYR)</th><th class="num">Balance (MYR)</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AR: INVOICES -->
+    <section id="section-ar-invoices" class="section">
+      <div class="section-header">
+        <h1>Sales Invoices</h1>
+        <button class="btn btn-primary" onclick="openInvoiceModal()">+ New Invoice</button>
+      </div>
+      <div class="filter-bar">
+        <select id="inv-filter-customer" class="input" onchange="renderInvoices()" style="width:200px">
+          <option value="">All Customers</option>
+        </select>
+        <select id="inv-filter-status" class="input" onchange="renderInvoices()" style="width:150px">
+          <option value="">All Status</option>
+          <option value="outstanding">Outstanding</option>
+          <option value="partial">Partial</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <input type="month" id="inv-filter-month" class="input" onchange="renderInvoices()" style="width:150px">
+      </div>
+      <div class="card">
+        <table class="table" id="invoices-table">
+          <thead><tr><th>Invoice No.</th><th>Date</th><th>Due Date</th><th>Customer</th><th class="num">Amount (MYR)</th><th class="num">Paid (MYR)</th><th class="num">Balance (MYR)</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AR: RECEIPTS -->
+    <section id="section-ar-receipts" class="section">
+      <div class="section-header">
+        <h1>Customer Receipts</h1>
+        <button class="btn btn-primary" onclick="openReceiptModal()">+ New Receipt</button>
+      </div>
+      <div class="filter-bar">
+        <select id="rcpt-filter-customer" class="input" onchange="renderReceipts()" style="width:200px">
+          <option value="">All Customers</option>
+        </select>
+        <input type="month" id="rcpt-filter-month" class="input" onchange="renderReceipts()" style="width:150px">
+      </div>
+      <div class="card">
+        <table class="table" id="receipts-table">
+          <thead><tr><th>Receipt No.</th><th>Date</th><th>Customer</th><th>Bank Account</th><th class="num">Amount (MYR)</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AR: AGING -->
+    <section id="section-ar-aging" class="section">
+      <div class="section-header">
+        <h1>AR Aging Report</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="ar-aging-date" class="input" style="width:160px">
+          <button class="btn btn-primary" onclick="renderARaging()">Generate</button>
+          <button class="btn btn-outline" onclick="printSection('ar-aging-report')">Print</button>
+        </div>
+      </div>
+      <div class="report-container" id="ar-aging-report"><p class="empty-msg">Select a date and click Generate.</p></div>
+    </section>
+
+    <!-- AP: SUPPLIERS -->
+    <section id="section-ap-suppliers" class="section">
+      <div class="section-header">
+        <h1>Suppliers</h1>
+        <button class="btn btn-primary" onclick="openSupplierModal()">+ Add Supplier</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" id="supplier-search" class="input" placeholder="Search name / code..." oninput="renderSuppliers()" style="width:260px">
+      </div>
+      <div class="card">
+        <table class="table" id="suppliers-table">
+          <thead><tr><th>Code</th><th>Supplier Name</th><th>Contact</th><th>Payment Terms</th><th class="num">Balance (MYR)</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AP: BILLS -->
+    <section id="section-ap-bills" class="section">
+      <div class="section-header">
+        <h1>Purchase Invoices</h1>
+        <button class="btn btn-primary" onclick="openBillModal()">+ New Invoice</button>
+      </div>
+      <div class="filter-bar">
+        <select id="bill-filter-supplier" class="input" onchange="renderBills()" style="width:200px">
+          <option value="">All Suppliers</option>
+        </select>
+        <select id="bill-filter-status" class="input" onchange="renderBills()" style="width:150px">
+          <option value="">All Status</option>
+          <option value="outstanding">Outstanding</option>
+          <option value="partial">Partial</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <input type="month" id="bill-filter-month" class="input" onchange="renderBills()" style="width:150px">
+      </div>
+      <div class="card">
+        <table class="table" id="bills-table">
+          <thead><tr><th>Our Ref.</th><th>Supplier Inv.</th><th>Date</th><th>Due Date</th><th>Supplier</th><th class="num">Amount (MYR)</th><th class="num">Paid (MYR)</th><th class="num">Balance (MYR)</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AP: PAYMENTS -->
+    <section id="section-ap-payments" class="section">
+      <div class="section-header">
+        <h1>Supplier Payments</h1>
+        <button class="btn btn-primary" onclick="openPaymentModal()">+ New Payment</button>
+      </div>
+      <div class="filter-bar">
+        <select id="pay-filter-supplier" class="input" onchange="renderPayments()" style="width:200px">
+          <option value="">All Suppliers</option>
+        </select>
+        <input type="month" id="pay-filter-month" class="input" onchange="renderPayments()" style="width:150px">
+      </div>
+      <div class="card">
+        <table class="table" id="payments-table">
+          <thead><tr><th>Payment No.</th><th>Date</th><th>Supplier</th><th>Bank Account</th><th class="num">Amount (MYR)</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AP: AGING -->
+    <section id="section-ap-aging" class="section">
+      <div class="section-header">
+        <h1>AP Aging Report</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="ap-aging-date" class="input" style="width:160px">
+          <button class="btn btn-primary" onclick="renderAPaging()">Generate</button>
+          <button class="btn btn-outline" onclick="printSection('ap-aging-report')">Print</button>
+        </div>
+      </div>
+      <div class="report-container" id="ap-aging-report"><p class="empty-msg">Select a date and click Generate.</p></div>
+    </section>
+
+    <!-- FIXED ASSETS -->
+    <section id="section-assets" class="section">
+      <div class="section-header">
+        <h1>🏢 Fixed Assets / 고정자산</h1>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="openAssetModal()">+ Add Asset / 자산 추가</button>
+          <label class="btn btn-outline" style="cursor:pointer">
+            📥 CSV 가져오기
+            <input type="file" accept=".csv,.txt" style="display:none" onchange="handleAssetCSVImport(event)">
+          </label>
+          <button class="btn btn-outline" onclick="downloadAssetTemplate()">↓ 템플릿 다운로드</button>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="cards-grid" id="asset-summary" style="grid-template-columns:repeat(5,1fr);gap:.5rem;margin-bottom:1rem"></div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <select id="asset-filter-cat" class="input" onchange="renderAssets()" style="width:200px">
+          <option value="">전체 분류</option>
+          <option value="COMP">컴퓨터 / IT 장비</option>
+          <option value="FURN">사무용 가구</option>
+          <option value="EQUIP">사무용 기기</option>
+          <option value="VEHIC">차량운반구</option>
+          <option value="PLANT">기계장치</option>
+          <option value="RENOV">시설장치 / 임차개량</option>
+          <option value="BUILD">건물</option>
+          <option value="OTHER">기타</option>
+        </select>
+        <select id="asset-filter-status" class="input" onchange="renderAssets()" style="width:150px">
+          <option value="">전체 상태</option>
+          <option value="active">사용중</option>
+          <option value="disposed">매각</option>
+          <option value="written-off">폐기</option>
+        </select>
+      </div>
+
+      <div class="card" id="assets-list"></div>
+
+      <div class="section-header" style="margin-top:1.5rem">
+        <h2>📉 Post Depreciation / 감가상각 분개 생성</h2>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="month" id="dep-month" class="input" style="width:160px">
+          <button class="btn btn-accent" onclick="postDepreciation()">월 감가상각 분개 생성</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ASSET REGISTER REPORT -->
+    <section id="section-asset-register" class="section">
+      <div class="section-header">
+        <h1>📋 Asset Register / 고정자산 대장</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="areg-date" class="input" style="width:160px">
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem">
+            <input type="checkbox" id="areg-include-disposed"> 매각·폐기 자산 포함
+          </label>
+          <button class="btn btn-primary" onclick="renderAssetRegister()">조회</button>
+          <button class="btn btn-outline" onclick="printSection('asset-register-report')">인쇄</button>
+        </div>
+      </div>
+      <div class="report-container" id="asset-register-report"><p class="empty-msg">날짜 입력 후 조회 클릭.</p></div>
+    </section>
+
+    <!-- TAX: CP58 -->
+    <section id="section-tax-cp58" class="section">
+      <div class="section-header">
+        <h1>📋 CP58 — 수수료/인센티브 지급 신고</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <label style="font-size:.82rem">신고 연도:</label>
+          <input type="number" id="cp58-year" class="input" style="width:120px" min="2020" max="2030">
+          <button class="btn btn-primary" onclick="renderCP58()">조회</button>
+          <button class="btn btn-outline" onclick="printSection('cp58-report')">인쇄</button>
+        </div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#fef3c7,#fffbeb);border-left:4px solid #d97706">
+        <h3 style="font-size:1rem;margin-bottom:.4rem">⭐ 오퍼/수수료 사업 핵심 신고서</h3>
+        <p style="font-size:.82rem;color:#92400e;line-height:1.6">
+          Section 83A Income Tax Act 1967에 따라 agent/dealer/distributor에게 연간 <strong>MYR 5,000 초과</strong> 지급 시
+          매년 <strong>3월 31일까지 LHDN</strong>에 CP58 양식으로 신고 의무. 미신고 시 <strong>벌금 RM 200~20,000</strong> 또는 징역 6개월.
+        </p>
+      </div>
+      <div class="report-container" id="cp58-report"><p class="empty-msg">연도 선택 후 조회 클릭.</p></div>
+    </section>
+
+    <!-- TAX: INCOME TAX COMPUTATION -->
+    <section id="section-tax-computation" class="section">
+      <div class="section-header">
+        <h1>💼 Income Tax Computation / 법인세 산출</h1>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <input type="date" id="tax-comp-from" class="input" style="width:150px">
+          <span>~</span>
+          <input type="date" id="tax-comp-to" class="input" style="width:150px">
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem">
+            <input type="checkbox" id="tax-comp-sme" checked> SME (17% first 600k)
+          </label>
+          <button class="btn btn-primary" onclick="renderTaxComputation()">산출</button>
+          <button class="btn btn-outline" onclick="printSection('tax-comp-output')">인쇄</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:.95rem;margin-bottom:.75rem">조정 항목 입력 (수정 후 재산출)</h3>
+        <div id="tax-comp-form" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+          <div class="form-group">
+            <label>접대비 총액 (Entertainment) <span style="font-size:.7rem;color:var(--text-muted)">— 50% 가산</span></label>
+            <input type="number" id="tax-adj-entertainment" class="input" value="0" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>기타 손금불산입 (Non-deductible)</label>
+            <input type="number" id="tax-adj-nondeductible" class="input" value="0" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>기타 가산항목 (Other Add-back)</label>
+            <input type="number" id="tax-adj-otheradd" class="input" value="0" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>Section 33 공제 (Sec 33 Deductions)</label>
+            <input type="number" id="tax-adj-sec33" class="input" value="0" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>기타 공제 (Other Deductions)</label>
+            <input type="number" id="tax-adj-otherdeduct" class="input" value="0" step="0.01" min="0">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn btn-accent" onclick="renderTaxComputation()" style="width:100%">↻ 재산출</button>
+          </div>
+        </div>
+      </div>
+      <div class="report-container" id="tax-comp-output"></div>
+    </section>
+
+    <!-- TAX: CALENDAR -->
+    <section id="section-tax-calendar" class="section">
+      <div class="section-header">
+        <h1>📅 Tax Calendar / 세무 일정</h1>
+        <button class="btn btn-primary" onclick="renderTaxCalendar()">↻ 새로고침</button>
+      </div>
+      <div class="report-container" id="tax-calendar-output"><p class="empty-msg">새로고침 클릭.</p></div>
+    </section>
+
+    <!-- TAX: WHT -->
+    <section id="section-tax-wht" class="section">
+      <div class="section-header">
+        <h1>🏛️ Withholding Tax / 원천징수세</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="wht-from" class="input" style="width:150px">
+          <span>~</span>
+          <input type="date" id="wht-to" class="input" style="width:150px">
+          <button class="btn btn-primary" onclick="renderWHTReport()">조회</button>
+          <button class="btn btn-outline" onclick="printSection('wht-output')">인쇄</button>
+        </div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#fef3c7,#fffbeb);border-left:4px solid #d97706">
+        <h3 style="font-size:1rem;margin-bottom:.4rem">💼 비거주자 지급 시 원천징수</h3>
+        <p style="font-size:.82rem;color:#92400e;line-height:1.6">
+          말레이시아 외 비거주자에게 royalty / interest / technical service / 도급비용 등 지급 시
+          소득세법 Section 107A-109에 따라 원천징수 의무. 납부 기한 <strong>30일 이내</strong>.
+          <br>Supplier Payment 입력 시 WHT 유형을 선택하면 자동으로 분개 및 신고용 데이터 생성됩니다.
+        </p>
+      </div>
+      <div class="report-container" id="wht-output"><p class="empty-msg">기간 선택 후 조회 클릭.</p></div>
+    </section>
+
+    <!-- FINANCIAL RATIOS -->
+    <section id="section-ratios" class="section">
+      <div class="section-header">
+        <h1>📈 Financial Ratios / 재무비율 분석</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="ratio-from" class="input" style="width:150px">
+          <span>~</span>
+          <input type="date" id="ratio-date" class="input" style="width:150px">
+          <button class="btn btn-primary" onclick="renderRatios()">계산</button>
+          <button class="btn btn-outline" onclick="printSection('ratios-output')">인쇄</button>
+        </div>
+      </div>
+      <div class="report-container" id="ratios-output"><p class="empty-msg">기간 선택 후 계산 클릭.</p></div>
+    </section>
+
+    <!-- YEAR-END CLOSING -->
+    <section id="section-closing" class="section">
+      <div class="section-header">
+        <h1>🔒 Year-End Closing / 연말결산</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <label style="font-size:.82rem">회계연도 종료일:</label>
+          <input type="date" id="ye-fy-end" class="input" style="width:150px">
+          <button class="btn btn-primary" onclick="renderYearEndClosing()">조회</button>
+        </div>
+      </div>
+      <div class="report-container" id="closing-output"><p class="empty-msg">FY 종료일 선택 후 조회 클릭.</p></div>
+    </section>
+
+    <!-- EMPLOYEES -->
+    <section id="section-employees" class="section">
+      <div class="section-header">
+        <h1>👤 Employees / 직원 관리</h1>
+        <button class="btn btn-primary" onclick="openEmployeeModal()">+ Add Employee</button>
+      </div>
+      <div class="card">
+        <table class="table" id="employees-table">
+          <thead><tr><th>코드</th><th>직원명 / IC</th><th>EPF/SOCSO No</th><th class="num">기본급 (MYR)</th><th>상태</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAYROLL RUN -->
+    <section id="section-payroll-run" class="section">
+      <div class="section-header">
+        <h1>💵 Payroll Run / 월 급여 정산</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="month" id="payroll-month" class="input" style="width:150px" onchange="renderPayrollRun()">
+          <button class="btn btn-primary" onclick="renderPayrollRun()">계산</button>
+          <button class="btn btn-outline" onclick="printSection('payroll-output')">인쇄</button>
+        </div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#fef3c7,#fffbeb);border-left:4px solid #d97706">
+        <p style="font-size:.82rem;color:#92400e;line-height:1.6">
+          💼 <strong>자동 계산:</strong> 기본급 + 수당 = 총급여 → EPF/SOCSO/EIS/PCB 자동 차감 → 실수령액
+          + 회사 부담분(EPF 13%, SOCSO 1.75%, EIS 0.2%) 자동 분개 생성
+        </p>
+      </div>
+      <div class="report-container" id="payroll-output"></div>
+    </section>
+
+    <!-- FOREX -->
+    <section id="section-forex" class="section">
+      <div class="section-header">
+        <h1>💱 Exchange Rates / 환율 관리</h1>
+        <button class="btn btn-primary" onclick="openRateModal()">+ 환율 입력</button>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,#e0e7ff,#eef2ff);border-left:4px solid #6366f1;margin-bottom:1rem">
+        <h3 style="font-size:.95rem;margin-bottom:.5rem">💱 빠른 환산 계산기</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.5fr;gap:.5rem;align-items:end">
+          <div class="form-group">
+            <label>통화</label>
+            <select id="fc-currency" class="input" onchange="updateForexCalc()"></select>
+          </div>
+          <div class="form-group">
+            <label>금액</label>
+            <input type="number" id="fc-amount" class="input" value="1000" step="0.01" oninput="updateForexCalc()">
+          </div>
+          <div class="form-group">
+            <label>날짜</label>
+            <input type="date" id="fc-date" class="input" onchange="updateForexCalc()">
+          </div>
+          <div id="fc-result" style="padding:.5rem;background:white;border-radius:6px;text-align:center"></div>
+        </div>
+      </div>
+
+      <div id="forex-output"></div>
+    </section>
+
+    <!-- SST SUMMARY -->
+    <section id="section-sst" class="section">
+      <div class="section-header">
+        <h1>SST Summary</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="month" id="sst-from" class="input" style="width:150px">
+          <span style="color:var(--text-muted)">to</span>
+          <input type="month" id="sst-to" class="input" style="width:150px">
+          <button class="btn btn-primary" onclick="renderSST()">Generate</button>
+          <button class="btn btn-outline" onclick="printSection('sst-report')">Print</button>
+        </div>
+      </div>
+      <div class="report-container" id="sst-report"><p class="empty-msg">Select period and click Generate.</p></div>
+    </section>
+
+    <!-- P&L -->
+    <section id="section-pl" class="section">
+      <div class="section-header">
+        <h1>Profit &amp; Loss Statement</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="pl-from" class="input" style="width:150px">
+          <span style="color:var(--text-muted)">to</span>
+          <input type="date" id="pl-to" class="input" style="width:150px">
+          <button class="btn btn-primary" onclick="renderPL()">Generate</button>
+          <button class="btn btn-outline" onclick="printSection('pl-report')">Print</button>
+        </div>
+      </div>
+      <div class="report-container" id="pl-report"></div>
+    </section>
+
+    <!-- BALANCE SHEET -->
+    <section id="section-bs" class="section">
+      <div class="section-header">
+        <h1>Balance Sheet</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="bs-date" class="input" style="width:150px">
+          <button class="btn btn-primary" onclick="renderBS()">Generate</button>
+          <button class="btn btn-outline" onclick="printSection('bs-report')">Print</button>
+        </div>
+      </div>
+      <div class="report-container" id="bs-report"></div>
+    </section>
+
+    <!-- TRIAL BALANCE -->
+    <section id="section-trial" class="section">
+      <div class="section-header">
+        <h1>Trial Balance</h1>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <input type="date" id="trial-date" class="input" style="width:150px">
+          <button class="btn btn-primary" onclick="renderTrial()">Generate</button>
+          <button class="btn btn-outline" onclick="printSection('trial-report')">Print</button>
+        </div>
+      </div>
+      <div class="report-container" id="trial-report"></div>
+    </section>
+
+    <!-- USERS -->
+    <section id="section-users" class="section">
+      <div class="section-header">
+        <h1>👥 User Management / 사용자 관리</h1>
+      </div>
+      <div id="users-output"></div>
+    </section>
+
+    <!-- CLOUD BACKUP -->
+    <section id="section-cloud-backup" class="section">
+      <div class="section-header">
+        <h1>☁️ Cloud Backup / 클라우드 백업</h1>
+      </div>
+      <div id="backup-output"></div>
+    </section>
+
+    <!-- IMPORT / BACKUP -->
+    <section id="section-import" class="section">
+      <div class="section-header"><h1>Import / Backup</h1></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+        <div class="card">
+          <h3 style="margin-bottom:1rem">Backup &amp; Restore (JSON)</h3>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Export all data as a JSON file or restore from a previous backup.</p>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="exportData()">Export Backup</button>
+            <label class="btn btn-outline" style="cursor:pointer">
+              Restore Backup
+              <input type="file" accept=".json" style="display:none" onchange="importJsonBackup(event)">
+            </label>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <h3 style="margin-bottom:.75rem">🔄 자동 스냅샷 (Auto-Backup)</h3>
+          <div id="autobackup-panel"><p class="empty-msg">로딩 중...</p></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:1rem">Import from Mr. Accounting (MySoft)</h3>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem">Import data exported from MySoft Mr. Accounting. Supported formats: <strong>CSV, Excel (.xlsx/.xls), PDF, Word (.docx)</strong>. Select the data type, then upload the file.</p>
+          <div class="form-group">
+            <label>Data Type</label>
+            <select id="mr-import-type" class="input">
+              <option value="gl">GL Transactions (Date, Ref, Description, Account Code, Debit, Credit)</option>
+              <option value="coa">Chart of Accounts (Account Code, Account Name, Type)</option>
+              <option value="customers">Customers (Code, Name, Contact, Credit Limit)</option>
+              <option value="suppliers">Suppliers (Code, Name, Contact, Terms)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Data File</label>
+            <label class="btn btn-outline" style="cursor:pointer;display:inline-block">
+              Choose File (CSV / Excel / PDF / Word)
+              <input type="file" accept=".csv,.txt,.xlsx,.xls,.xlsm,.pdf,.docx,.doc" style="display:none" onchange="handleMrImport(event)">
+            </label>
+          </div>
+          <div id="import-preview" style="margin-top:.75rem"></div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <h3 style="margin-bottom:.75rem">Import Notes</h3>
+          <ul style="font-size:.8rem;color:var(--text-muted);line-height:1.8;padding-left:1.25rem">
+            <li>Supported file formats: <strong>CSV, Excel (.xlsx/.xls/.xlsm), PDF, Word (.docx)</strong>. Legacy <code>.doc</code> binary files must be re-saved as <code>.docx</code> or <code>.csv</code>.</li>
+            <li>Excel: only the first sheet with data is imported. Row 1 must be the header row.</li>
+            <li>PDF: text-based PDFs only (scanned/image PDFs need OCR first). Columns are recovered from horizontal spacing — tables export best.</li>
+            <li>Word (.docx): if the document contains a table, it is imported directly; otherwise rows are recovered from multi-space-separated text.</li>
+            <li>GL Transactions file must have columns: <strong>Date, Reference, Description, Account Code, Debit, Credit</strong> (header row required)</li>
+            <li>Chart of Accounts CSV must have columns: <strong>Account Code, Account Name, Type</strong> — Type values: Asset, Liability, Equity, Revenue, Expense</li>
+            <li>Customers CSV must have columns: <strong>Code, Name, Contact Person, Phone, Email, Credit Limit</strong></li>
+            <li>Suppliers CSV must have columns: <strong>Code, Name, Contact Person, Phone, Email, Payment Terms</strong></li>
+            <li>All amounts must be numeric without currency symbols or commas</li>
+            <li>Dates must be in YYYY-MM-DD or DD/MM/YYYY format</li>
+            <li>Import will not duplicate accounts — existing account codes are matched</li>
+            <li>After import, review the Trial Balance to verify data integrity</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== MODAL: Account ===== -->
+<div id="modal-account" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="account-modal-title">Add Account</h2>
+      <button class="modal-close" onclick="closeModal('modal-account')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Account Code *</label>
+          <input type="text" id="acc-code" class="input" placeholder="e.g. 1001">
+        </div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select id="acc-type" class="input">
+            <option value="asset">Asset</option>
+            <option value="liability">Liability</option>
+            <option value="equity">Equity</option>
+            <option value="revenue">Revenue</option>
+            <option value="cogs">Cost of Sales</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Account Name *</label>
+        <input type="text" id="acc-name" class="input" placeholder="e.g. Cash in Hand">
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:normal">
+          <input type="checkbox" id="acc-contra"> Contra account (e.g. Accumulated Depreciation)
+        </label>
+      </div>
+      <input type="hidden" id="acc-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-account')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAccount()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Journal Entry ===== -->
+<div id="modal-journal" class="modal-overlay" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="journal-modal-title">New Journal Entry</h2>
+      <button class="modal-close" onclick="closeModal('modal-journal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="je-date" class="input">
+        </div>
+        <div class="form-group">
+          <label>Reference No.</label>
+          <input type="text" id="je-ref" class="input" placeholder="e.g. JE2024001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="je-desc" class="input" placeholder="Transaction description">
+      </div>
+      <div class="je-lines-header">
+        <span style="flex:2.5">Account</span>
+        <span style="flex:1;text-align:right">Debit (MYR)</span>
+        <span style="flex:1;text-align:right">Credit (MYR)</span>
+        <span style="width:32px"></span>
+      </div>
+      <div id="je-lines"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:.5rem" onclick="addJELine()">+ Add Line</button>
+      <div class="je-totals">
+        <span>Totals:</span>
+        <span id="je-total-dr">DR: MYR 0.00</span>
+        <span id="je-total-cr">CR: MYR 0.00</span>
+      </div>
+      <div class="alert alert-danger" id="je-balance-error" style="display:none">
+        ⚠ Debit and Credit totals must be equal.
+      </div>
+      <input type="hidden" id="je-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-journal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJournalEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: View Entry ===== -->
+<div id="modal-view-entry" class="modal-overlay" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>Journal Entry Detail</h2>
+      <button class="modal-close" onclick="closeModal('modal-view-entry')">✕</button>
+    </div>
+    <div class="modal-body" id="view-entry-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-view-entry')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Customer ===== -->
+<!-- PENDING ENTRY MODAL -->
+<div id="modal-pending" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="pending-modal-title">미결거래 추가</h3>
+      <button class="modal-close" onclick="closeModal('modal-pending')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pending-edit-id">
+      <div class="form-group">
+        <label class="form-label">일자</label>
+        <input type="date" id="pending-date" class="input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">거래 유형</label>
+        <select id="pending-type" class="input" onchange="onPendingTypeChange()">
+          <option value="sales">판매송장 (수수료 청구)</option>
+          <option value="expense">직접경비</option>
+          <option value="purchase">매입송장</option>
+          <option value="receipt">고객 수령</option>
+          <option value="payment">공급업체 지급</option>
+          <option value="journal">수동 분개</option>
+        </select>
+      </div>
+      <div class="form-group" id="pending-customer-row">
+        <label class="form-label">고객사</label>
+        <select id="pending-customer" class="input">
+          <option value="">(미정)</option>
+        </select>
+      </div>
+      <div class="form-group" id="pending-supplier-row" style="display:none">
+        <label class="form-label">공급업체</label>
+        <select id="pending-supplier" class="input">
+          <option value="">(미정)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">내용 / 설명</label>
+        <input type="text" id="pending-description" class="input" placeholder="예: Osung 7월 수수료 청구">
+      </div>
+      <div class="form-group">
+        <label class="form-label">금액 (MYR)</label>
+        <input type="number" id="pending-amount" class="input" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">계정과목</label>
+        <select id="pending-account" class="input">
+          <option value="">(자동)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">보류 사유 <span style="color:var(--text-muted);font-weight:400">(메모)</span></label>
+        <textarea id="pending-reason" class="input" rows="2" placeholder="예: 입금 확인 후 처리 예정, 계약 확정 대기 중..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-pending')">취소</button>
+      <button class="btn btn-primary" onclick="savePendingEntry()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-customer" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="customer-modal-title">Add Customer</h2>
+      <button class="modal-close" onclick="closeModal('modal-customer')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Customer Code *</label>
+          <input type="text" id="cust-code" class="input" placeholder="e.g. C001">
+        </div>
+        <div class="form-group">
+          <label>Credit Limit (MYR)</label>
+          <input type="number" id="cust-credit" class="input" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Customer Name *</label>
+        <input type="text" id="cust-name" class="input" placeholder="Full company name">
+      </div>
+      <div class="form-group">
+        <label>Registration No. / IC No.</label>
+        <input type="text" id="cust-reg" class="input" placeholder="e.g. 202001234567">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contact Person</label>
+          <input type="text" id="cust-contact" class="input">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" id="cust-phone" class="input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="cust-email" class="input">
+        </div>
+        <div class="form-group">
+          <label>Payment Terms (days)</label>
+          <select id="cust-terms" class="input">
+            <option value="0">Cash / Immediate</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="45">45 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <textarea id="cust-address" class="input" rows="2"></textarea>
+      </div>
+      <input type="hidden" id="cust-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-customer')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Sales Invoice ===== -->
+<div id="modal-invoice" class="modal-overlay" style="display:none">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h2 id="invoice-modal-title">New Sales Invoice</h2>
+      <button class="modal-close" onclick="closeModal('modal-invoice')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Invoice No. *</label>
+          <input type="text" id="inv-number" class="input">
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="inv-date" class="input" onchange="calcInvDue()">
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="inv-due" class="input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Customer *</label>
+          <select id="inv-customer" class="input" onchange="calcInvDue()">
+            <option value="">-- Select Customer --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Our Reference / PO No.</label>
+          <input type="text" id="inv-ref" class="input" placeholder="Customer PO or our reference">
+        </div>
+      </div>
+
+      <!-- Line Items -->
+      <div style="margin-top:.5rem">
+        <div class="inv-line-header">
+          <span style="flex:3">Description</span>
+          <span style="flex:.8;text-align:right">Qty</span>
+          <span style="flex:1;text-align:right">Unit Price</span>
+          <span style="flex:.8;text-align:right">SST %</span>
+          <span style="flex:1;text-align:right">Amount</span>
+          <span style="flex:.8;text-align:right">SST Amt</span>
+          <span style="width:32px"></span>
+        </div>
+        <div id="inv-lines"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:.4rem" onclick="addInvLine()">+ Add Line</button>
+      </div>
+
+      <!-- Totals -->
+      <div class="inv-totals">
+        <div class="inv-total-row"><span>Subtotal:</span><span id="inv-subtotal">MYR 0.00</span></div>
+        <div class="inv-total-row"><span>SST:</span><span id="inv-sst-total">MYR 0.00</span></div>
+        <div class="inv-total-row inv-grand"><span>Total:</span><span id="inv-grand-total">MYR 0.00</span></div>
+      </div>
+
+      <div class="form-group" style="margin-top:.75rem">
+        <label>Notes / Remarks</label>
+        <textarea id="inv-notes" class="input" rows="2"></textarea>
+      </div>
+      <input type="hidden" id="inv-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-invoice')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvoice()">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Customer Receipt ===== -->
+<div id="modal-receipt" class="modal-overlay" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="receipt-modal-title">New Customer Receipt</h2>
+      <button class="modal-close" onclick="closeModal('modal-receipt')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Receipt No. *</label>
+          <input type="text" id="rcpt-number" class="input">
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="rcpt-date" class="input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Customer *</label>
+          <select id="rcpt-customer" class="input" onchange="loadReceiptInvoices()">
+            <option value="">-- Select Customer --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Deposit To (Bank/Cash Account) *</label>
+          <select id="rcpt-bank" class="input">
+            <option value="">-- Select Account --</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Payment Method</label>
+        <select id="rcpt-method" class="input">
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Cash">Cash</option>
+          <option value="Online Banking">Online Banking</option>
+          <option value="Credit Card">Credit Card</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cheque / Reference No.</label>
+        <input type="text" id="rcpt-cheque" class="input" placeholder="Optional">
+      </div>
+
+      <!-- Allocations -->
+      <div id="rcpt-allocations-section" style="display:none">
+        <div class="section-divider">Allocate to Invoices</div>
+        <div id="rcpt-allocations"></div>
+        <div class="inv-totals" style="margin-top:.5rem">
+          <div class="inv-total-row inv-grand"><span>Total Amount:</span><span id="rcpt-total-display">MYR 0.00</span></div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:.75rem">
+        <label>Remarks</label>
+        <input type="text" id="rcpt-notes" class="input" placeholder="Optional">
+      </div>
+      <input type="hidden" id="rcpt-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-receipt')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveReceipt()">Save Receipt</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Supplier ===== -->
+<div id="modal-supplier" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="supplier-modal-title">Add Supplier</h2>
+      <button class="modal-close" onclick="closeModal('modal-supplier')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Supplier Code *</label>
+          <input type="text" id="sup-code" class="input" placeholder="e.g. S001">
+        </div>
+        <div class="form-group">
+          <label>Payment Terms (days)</label>
+          <select id="sup-terms" class="input">
+            <option value="0">Cash / Immediate</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="45">45 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Supplier Name *</label>
+        <input type="text" id="sup-name" class="input">
+      </div>
+      <div class="form-group">
+        <label>Registration No.</label>
+        <input type="text" id="sup-reg" class="input">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contact Person</label>
+          <input type="text" id="sup-contact" class="input">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" id="sup-phone" class="input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="sup-email" class="input">
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <textarea id="sup-address" class="input" rows="2"></textarea>
+      </div>
+      <div class="form-group" style="background:#fef3c7;padding:.5rem;border-radius:4px">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:normal;font-size:.82rem">
+          <input type="checkbox" id="sup-commission-agent">
+          🔖 <strong>Commission Agent / 수수료 수령자</strong> — CP58 신고 대상 (Section 83A ITA 1967)
+        </label>
+        <p style="font-size:.7rem;color:#92400e;margin:.25rem 0 0 1.5rem">
+          체크 시 매년 3/31 CP58 신고 화면에 자동 포함됩니다 (MYR 5,000 초과 시)
+        </p>
+      </div>
+      <input type="hidden" id="sup-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-supplier')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSupplier()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Purchase Bill ===== -->
+<div id="modal-bill" class="modal-overlay" style="display:none">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h2 id="bill-modal-title">New Purchase Invoice</h2>
+      <button class="modal-close" onclick="closeModal('modal-bill')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Our Ref. *</label>
+          <input type="text" id="bill-number" class="input">
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="bill-date" class="input" onchange="calcBillDue()">
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="bill-due" class="input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Supplier *</label>
+          <select id="bill-supplier" class="input" onchange="calcBillDue()">
+            <option value="">-- Select Supplier --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Supplier Invoice No. *</label>
+          <input type="text" id="bill-sup-inv" class="input" placeholder="Supplier's invoice number">
+        </div>
+      </div>
+
+      <!-- Line Items -->
+      <div style="margin-top:.5rem">
+        <div class="inv-line-header">
+          <span style="flex:2">Description</span>
+          <span style="flex:1.5">Expense Account</span>
+          <span style="flex:.8;text-align:right">Qty</span>
+          <span style="flex:1;text-align:right">Unit Price</span>
+          <span style="flex:.8;text-align:right">SST %</span>
+          <span style="flex:1;text-align:right">Amount</span>
+          <span style="flex:.8;text-align:right">SST Amt</span>
+          <span style="width:32px"></span>
+        </div>
+        <div id="bill-lines"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:.4rem" onclick="addBillLine()">+ Add Line</button>
+      </div>
+
+      <div class="inv-totals">
+        <div class="inv-total-row"><span>Subtotal:</span><span id="bill-subtotal">MYR 0.00</span></div>
+        <div class="inv-total-row"><span>SST (Input):</span><span id="bill-sst-total">MYR 0.00</span></div>
+        <div class="inv-total-row inv-grand"><span>Total:</span><span id="bill-grand-total">MYR 0.00</span></div>
+      </div>
+
+      <div class="form-group" style="margin-top:.75rem">
+        <label>Notes</label>
+        <textarea id="bill-notes" class="input" rows="2"></textarea>
+      </div>
+      <input type="hidden" id="bill-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-bill')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBill()">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Supplier Payment ===== -->
+<div id="modal-payment" class="modal-overlay" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="payment-modal-title">New Supplier Payment</h2>
+      <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Payment No. *</label>
+          <input type="text" id="pay-number" class="input">
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="pay-date" class="input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Supplier *</label>
+          <select id="pay-supplier" class="input" onchange="loadPaymentBills()">
+            <option value="">-- Select Supplier --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Pay From (Bank/Cash Account) *</label>
+          <select id="pay-bank" class="input">
+            <option value="">-- Select Account --</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="pay-method" class="input">
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Cash">Cash</option>
+            <option value="Online Banking">Online Banking</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cheque / Reference No.</label>
+          <input type="text" id="pay-cheque" class="input" placeholder="Optional">
+        </div>
+      </div>
+
+      <!-- Allocations -->
+      <div id="pay-allocations-section" style="display:none">
+        <div class="section-divider">Allocate to Bills</div>
+        <div id="pay-allocations"></div>
+        <div class="inv-totals" style="margin-top:.5rem">
+          <div class="inv-total-row inv-grand"><span>Total Amount:</span><span id="pay-total-display">MYR 0.00</span></div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:.75rem">
+        <label>Remarks</label>
+        <input type="text" id="pay-notes" class="input" placeholder="Optional">
+      </div>
+      <input type="hidden" id="pay-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-payment')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Fixed Asset ===== -->
+<div id="modal-asset" class="modal-overlay" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="asset-modal-title">자산 추가</h2>
+      <button class="modal-close" onclick="closeModal('modal-asset')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>자산 코드 (Asset Code)</label>
+          <input type="text" id="asset-code" class="input" placeholder="자동 생성됨" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>분류 (Category) *</label>
+          <select id="asset-category" class="input" onchange="onAssetCategoryChange()">
+            <option value="COMP">컴퓨터 / IT 장비 (5년, IA 20% / AA 20%)</option>
+            <option value="FURN">사무용 가구 (10년, IA 20% / AA 10%)</option>
+            <option value="EQUIP">사무용 기기 (5년, IA 20% / AA 14%)</option>
+            <option value="VEHIC">차량운반구 (5년, IA 20% / AA 20%)</option>
+            <option value="PLANT">기계장치 (10년, IA 20% / AA 14%)</option>
+            <option value="RENOV">시설장치 / 임차개량 (10년, IA 0% / AA 0%)</option>
+            <option value="BUILD">건물 (50년, IA 10% / AA 3%)</option>
+            <option value="OTHER">기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>자산명 (Asset Name) *</label>
+        <input type="text" id="asset-name" class="input" placeholder="예: Dell Laptop i7 / Proton X70">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>취득일 (Purchase Date) *</label>
+          <input type="date" id="asset-date" class="input">
+        </div>
+        <div class="form-group">
+          <label>취득원가 (Cost, MYR) *</label>
+          <input type="number" id="asset-cost" class="input" step="0.01" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>잔존가치 (Residual, MYR)</label>
+          <input type="number" id="asset-residual" class="input" step="0.01" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label>내용연수 (Useful Life, 년) *</label>
+          <input type="number" id="asset-life" class="input" min="1" max="50" value="5">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>감가상각 방법 (Depreciation Method)</label>
+        <select id="asset-method" class="input">
+          <option value="straight-line">정액법 (Straight-Line)</option>
+          <option value="declining-balance">정률법 (Declining Balance)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>시리얼 No (Serial No)</label>
+          <input type="text" id="asset-serial" class="input" placeholder="제품 일련번호">
+        </div>
+        <div class="form-group">
+          <label>위치 (Location)</label>
+          <input type="text" id="asset-location" class="input" placeholder="예: Office 1F">
+        </div>
+      </div>
+      <div class="section-divider">🇲🇾 말레이시아 Capital Allowance (세무용)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Initial Allowance (IA) %</label>
+          <input type="number" id="asset-tax-ia" class="input" step="1" min="0" max="100" value="20">
+        </div>
+        <div class="form-group">
+          <label>Annual Allowance (AA) %</label>
+          <input type="number" id="asset-tax-aa" class="input" step="1" min="0" max="100" value="14">
+        </div>
+      </div>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-top:-.5rem">
+        💡 MYR 2,000 미만 자산은 Small Value Asset로 자동 인식 → 취득연도 100% 즉시 공제
+      </p>
+      <div class="form-group">
+        <label>메모 (Notes)</label>
+        <input type="text" id="asset-note" class="input" placeholder="예: Marketing dept use, 부서명, 비고">
+      </div>
+      <input type="hidden" id="asset-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-asset')">취소</button>
+      <button class="btn btn-primary" onclick="saveAsset()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Employee ===== -->
+<div id="modal-employee" class="modal-overlay" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="emp-modal-title">직원 추가</h2>
+      <button class="modal-close" onclick="closeModal('modal-employee')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>직원 코드 *</label>
+          <input type="text" id="emp-code" class="input" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>상태</label>
+          <select id="emp-status" class="input">
+            <option value="active">사용중</option>
+            <option value="resigned">퇴직</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>이름 *</label>
+        <input type="text" id="emp-name" class="input">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>IC / Passport No</label>
+          <input type="text" id="emp-ic" class="input" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>생년월일 (Date of Birth)</label>
+          <input type="date" id="emp-dob" class="input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>직책 (Position)</label>
+          <input type="text" id="emp-position" class="input" placeholder="예: Sales Manager">
+        </div>
+        <div class="form-group">
+          <label>입사일 (Join Date)</label>
+          <input type="date" id="emp-join" class="input">
+        </div>
+      </div>
+      <div class="section-divider">💰 급여 정보 (Salary)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>기본급 (Basic Salary, MYR) *</label>
+          <input type="number" id="emp-basic" class="input" step="0.01" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label>고정 수당 (Fixed Allowance, MYR)</label>
+          <input type="number" id="emp-allowance" class="input" step="0.01" min="0" value="0">
+        </div>
+      </div>
+      <div class="section-divider">🏛️ 통계 번호 (Statutory)</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>EPF No (KWSP)</label>
+          <input type="text" id="emp-epf-no" class="input" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>SOCSO No (PERKESO)</label>
+          <input type="text" id="emp-socso-no" class="input" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>Income Tax No</label>
+          <input type="text" id="emp-tax-no" class="input" style="font-family:monospace">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>은행 계좌 (급여 이체용)</label>
+        <input type="text" id="emp-bank" class="input" placeholder="예: Maybank 1234567890">
+      </div>
+      <input type="hidden" id="emp-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-employee')">취소</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: User ===== -->
+<div id="modal-user" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="user-modal-title">사용자 추가</h2>
+      <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>사용자명 (Username) *</label>
+          <input type="text" id="user-username" class="input" style="font-family:monospace" autocomplete="username">
+          <p style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem">로그인 시 사용. 생성 후 변경 불가.</p>
+        </div>
+        <div class="form-group">
+          <label>역할 (Role) *</label>
+          <select id="user-role" class="input">
+            <option value="admin">관리자 (Admin) — 모든 권한</option>
+            <option value="manager">매니저 (Manager) — 거래/보고서</option>
+            <option value="bookkeeper" selected>경리 (Bookkeeper) — 입력/조회</option>
+            <option value="viewer">조회 (Viewer) — 읽기 전용</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>이름 (Full Name) *</label>
+        <input type="text" id="user-name" class="input">
+      </div>
+      <div class="form-group">
+        <label>이메일 (Email)</label>
+        <input type="email" id="user-email" class="input">
+      </div>
+      <div class="form-group">
+        <label>비밀번호 (Password)</label>
+        <input type="password" id="user-password" class="input" autocomplete="new-password" placeholder="6자 이상 권장">
+      </div>
+      <input type="hidden" id="user-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-user')">취소</button>
+      <button class="btn btn-primary" onclick="saveUser()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Exchange Rate ===== -->
+<div id="modal-rate" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>환율 입력</h2>
+      <button class="modal-close" onclick="closeModal('modal-rate')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>통화 *</label>
+          <select id="rate-currency" class="input"></select>
+        </div>
+        <div class="form-group">
+          <label>날짜 *</label>
+          <input type="date" id="rate-date" class="input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>환율 (1 외화 = ? MYR) *</label>
+        <input type="number" id="rate-value" class="input" step="0.0001" min="0" placeholder="예: USD = 4.5">
+        <p style="font-size:.72rem;color:var(--text-muted);margin-top:.25rem">
+          예: 1 USD = 4.50 MYR이면 4.50 입력
+        </p>
+      </div>
+      <div class="form-group">
+        <label>메모</label>
+        <input type="text" id="rate-note" class="input" placeholder="예: Maybank closing rate">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-rate')">취소</button>
+      <button class="btn btn-primary" onclick="saveRate()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Asset Disposal ===== -->
+<div id="modal-dispose" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📤 자산 처분 / 매각</h2>
+      <button class="modal-close" onclick="closeModal('modal-dispose')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f1f5f9;padding:.75rem;border-radius:6px;margin-bottom:1rem">
+        <div style="font-size:.85rem;font-weight:600" id="dispose-asset-name">—</div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.2rem">처분일 기준 장부가액: <strong>MYR <span id="dispose-bv">0.00</span></strong></div>
+      </div>
+      <div class="form-group">
+        <label>처분 방식 *</label>
+        <div style="display:flex;gap:1rem;margin-top:.4rem">
+          <label style="font-weight:normal;display:flex;align-items:center;gap:.4rem">
+            <input type="radio" name="dispose-method" id="dispose-method-sold" value="sold" checked> 💰 매각 (Sale)
+          </label>
+          <label style="font-weight:normal;display:flex;align-items:center;gap:.4rem">
+            <input type="radio" name="dispose-method" id="dispose-method-writeoff" value="writeoff"> 🗑 폐기 / Write-off
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>처분일 *</label>
+        <input type="date" id="dispose-date" class="input">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>매각대금 (MYR)</label>
+          <input type="number" id="dispose-proceeds" class="input" step="0.01" min="0" placeholder="0.00 (폐기 시 0)" oninput="updateDisposeGainLoss()">
+        </div>
+        <div class="form-group">
+          <label>수령 계좌</label>
+          <select id="dispose-bank-account" class="input">
+            <option value="">-- 계정 --</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:#fef3c7;padding:.75rem;border-radius:6px;margin-top:.5rem">
+        <div style="font-size:.85rem;font-weight:600;text-align:center" id="dispose-gl">처분이익 MYR 0.00</div>
+        <div style="font-size:.7rem;color:var(--text-muted);text-align:center;margin-top:.2rem">매각대금 - 장부가액 = 처분손익</div>
+      </div>
+      <input type="hidden" id="dispose-asset-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-dispose')">취소</button>
+      <button class="btn btn-danger" onclick="confirmDispose()">✓ 처분 확정</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-auth.js?v=3"></script>
+<script src="js/app.js"></script>
+<script src="js/supabase-db.js?v=8"></script>
+<script src="js/ar.js"></script>
+<script src="js/ap.js"></script>
+<script src="js/sst.js"></script>
+<!-- Import parser libraries (Excel/PDF/Word) — loaded lazily by import.js when needed -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  if (window['pdfjsLib']) {
+    window['pdfjsLib'].GlobalWorkerOptions.workerSrc =
+      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="js/import.js"></script>
+<script src="js/quick-entry.js"></script>
+<script src="js/bank-statement.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/tax.js"></script>
+<script src="js/closing.js"></script>
+<script src="js/ratios.js"></script>
+<script src="js/payroll.js"></script>
+<script src="js/forex.js"></script>
+<script src="js/wht.js"></script>
+<script src="js/users.js"></script>
+<script src="js/cloud-backup.js"></script>
+<script src="js/pending.js"></script>
+<script src="js/i18n.js"></script>
+</body>
+</html>

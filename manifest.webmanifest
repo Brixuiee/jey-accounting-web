@@ -1,0 +1,20 @@
+{
+  "name": "JEY & Company SB — Accounting System",
+  "short_name": "JEY Accounting",
+  "description": "JEY & Company SB 회계 시스템 (오프라인 사용 가능)",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f0f4f8",
+  "theme_color": "#1a3c5e",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

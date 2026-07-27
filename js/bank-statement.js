@@ -89,7 +89,11 @@ async function parseBankStatementPDF(arrayBuffer) {
     // Cluster into rows by y (±2pt tolerance), then sort each row left-to-right
     const rows = [];
     items.forEach(it => {
-      let row = rows.find(r => Math.abs(r.y - it.y) <= 2);
+      // Tolerance wide enough to reabsorb a wrapped description's extra
+      // line(s) — e.g. "BIZCHANNEL MTHLY OCT" / "2025 FEE (INCL 8% GST)"
+      // straddle ~5-6pt above/below the row's numeric baseline — while still
+      // staying well short of the ~30pt+ gap between distinct transactions.
+      let row = rows.find(r => Math.abs(r.y - it.y) <= 7);
       if (!row) { row = {y: it.y, items: []}; rows.push(row); }
       row.items.push(it);
     });

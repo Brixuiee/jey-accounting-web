@@ -65,6 +65,65 @@ function parseBankStatementCSV(text) {
   }).filter(r => r.date && (r.withdrawal > 0 || r.deposit > 0));
 }
 
+// ── PDF import ────────────────────────────────────────
+// Tailored to Malaysian bank BizChannel-style PDF statements (tested against
+// CIMB), where each transaction lands on one visual row:
+//   <acct#> <seq> MM/DD/YYYY <code> <description...> <branch|"No Record Found"> <docRef> <amount> D|C <balance> C <recType>
+// Text is pulled from the PDF's text layer (no OCR), grouped into rows by
+// y-position, then columns joined left-to-right by x-position — this mirrors
+// the table's visual layout closely enough for a fixed-shape regex to match.
+// Branch/doc-ref column: usually "<4-digit branch> <docRef>", but rows with
+// no originating branch collapse to a bare "No Record Found" (no doc ref at all).
+const BS_PDF_ROW_RX = /^\d{4,}\s+\d+\s+(\d{2})\/(\d{2})\/(\d{4})\s+\d{3,4}\s+(.+?)\s+(?:\d{3,4}\s+\S+|No\s+Record\s+Found)\s+([\d,]+\.\d{2})\s+([DC])\s+([\d,]+\.\d{2})\s+[DC]\s+\d+\s*$/;
+
+async function parseBankStatementPDF(arrayBuffer) {
+  if (typeof pdfjsLib === 'undefined') throw new Error('PDF 파서(PDF.js)가 로드되지 않았습니다.');
+  const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+  const textRows = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items
+      .map(it => ({str: it.str, x: it.transform[4], y: Math.round(it.transform[5])}))
+      .filter(it => it.str.trim());
+    // Cluster into rows by y (±2pt tolerance), then sort each row left-to-right
+    const rows = [];
+    items.forEach(it => {
+      let row = rows.find(r => Math.abs(r.y - it.y) <= 2);
+      if (!row) { row = {y: it.y, items: []}; rows.push(row); }
+      row.items.push(it);
+    });
+    rows.sort((a, b) => b.y - a.y);  // PDF y grows upward — top of page first
+    rows.forEach(r => {
+      r.items.sort((a, b) => a.x - b.x);
+      textRows.push(r.items.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim());
+    });
+  }
+
+  const out = [];
+  for (const raw of textRows) {
+    const m = raw.match(BS_PDF_ROW_RX);
+    if (!m) continue;
+    const [, mm, dd, yyyy, desc, amtStr, drcr, balStr] = m;
+    const amount = Number(amtStr.replace(/,/g, ''));
+    if (!amount) continue;
+    out.push({
+      date: `${yyyy}-${mm}-${dd}`,
+      desc: desc.trim(),
+      withdrawal: drcr === 'D' ? amount : 0,
+      deposit: drcr === 'C' ? amount : 0,
+      balance: Number(balStr.replace(/,/g, '')),
+      refNo: '',
+    });
+  }
+  if (!out.length) {
+    throw new Error('PDF에서 거래 내역을 인식하지 못했습니다. 이 은행/양식은 아직 지원하지 않을 수 있습니다 — CSV로 시도해보세요.');
+  }
+  // Statement PDFs commonly list most-recent-first; re-sort chronologically
+  out.sort((a, b) => a.date.localeCompare(b.date));
+  return out;
+}
+
 // ── Auto-categorize a single bank line ───────────────
 function categorizeBankLine(line, bankAccId) {
   const desc = (line.desc || '').toLowerCase();
@@ -204,17 +263,19 @@ function onBSFileChange(event) {
   const file = event.target.files[0];
   if (!file) return;
   if (!_bsBankAccId) { alert('먼저 은행 계정을 선택하세요.'); event.target.value = ''; return; }
+  const isPDF = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
-      const lines = parseBankStatementCSV(e.target.result);
+      const lines = isPDF ? await parseBankStatementPDF(e.target.result) : parseBankStatementCSV(e.target.result);
       processBankLines(lines, file.name);
     } catch (err) {
       console.error(err);
-      alert('CSV 파싱 실패: ' + err.message);
+      alert((isPDF ? 'PDF' : 'CSV') + ' 파싱 실패: ' + err.message);
     }
   };
-  reader.readAsText(file, 'UTF-8');
+  if (isPDF) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file, 'UTF-8');
   event.target.value = '';
 }
 
@@ -373,6 +434,7 @@ function renderBSPreview(source) {
       <div style="margin-top:.75rem;display:flex;gap:.5rem;justify-content:flex-end;align-items:center">
         <span style="font-size:.75rem;color:var(--text-muted)">매칭(녹색)은 자동으로 건너뜁니다. 미분류(노랑)는 직접 확인 후 등록하세요.</span>
         <button class="btn btn-outline" onclick="cancelBankStatement()">취소</button>
+        <button class="btn btn-outline" style="border-color:#d97706;color:#d97706" onclick="commitBankStatementAsSuspense()" title="세부 계정을 지금 정하지 않고, 은행 잔액만 먼저 맞춰둔 뒤 나중에 하나씩 정리합니다">⚡ 전부 미분류로 즉시 기표</button>
         <button class="btn btn-primary" onclick="commitBankStatement()">✓ 전체 등록</button>
       </div>
     </div>`;
@@ -540,6 +602,126 @@ function commitBankStatement() {
   alert(msg);
   document.getElementById('bs-preview').innerHTML = `<div class="alert alert-success" style="margin-top:1rem">${msg.replace(/\n/g,'<br>')}</div>`;
   _bsParsed = null;
+}
+
+// ── "Post first, classify later" — bulk-post everything unmatched to a
+//    suspense/clearing account so the bank balance is right immediately,
+//    then reclassify each one individually later (see renderUnclassifiedBank). ──
+function _getSuspenseAccount() {
+  return DB.accounts.find(a => a.code === '2010') || DB.accounts.find(a => /은행거래\s*미정리/.test(a.nameKr || ''));
+}
+
+function commitBankStatementAsSuspense() {
+  if (!_bsParsed || !_bsBankAccId) return;
+  const susp = _getSuspenseAccount();
+  if (!susp) return alert('미분류 임시 계정(2010 은행거래 미정리)을 찾을 수 없습니다.');
+  const toPost = _bsParsed.filter(l => l.suggestion.action !== 'matched' && (l.withdrawal || l.deposit));
+  if (!toPost.length) return alert('기표할 미매칭 거래가 없습니다.');
+  if (!confirm(`매칭 안 된 ${toPost.length}건을 전부 "${susp.code} ${susp.nameKr}" 계정으로 임시 기표합니다.\n나중에 "미분류 은행거래" 메뉴에서 하나씩 실제 계정으로 정리해주세요.\n계속할까요?`)) return;
+
+  let count = 0;
+  _bsParsed.forEach((line, i) => {
+    if (line.suggestion.action === 'matched') return;
+    const amt = line.withdrawal || line.deposit;
+    if (!amt) return;
+    const isWithdrawal = line.withdrawal > 0;
+    DB.entries.push({
+      id: uid(), date: line.date,
+      reference: `BS${line.date.slice(0,7).replace('-','')}${String(i+1).padStart(3,'0')}`,
+      description: line.desc,
+      lines: isWithdrawal ? [
+        {accountId: susp.id, debit: amt, credit: 0},
+        {accountId: _bsBankAccId, debit: 0, credit: amt},
+      ] : [
+        {accountId: _bsBankAccId, debit: amt, credit: 0},
+        {accountId: susp.id, debit: 0, credit: amt},
+      ],
+      source: 'bank-suspense',
+      needsReclass: true,
+    });
+    count++;
+  });
+
+  saveDB();
+  populateAccountDropdowns();
+  populateLedgerSelect();
+  const msg = `✓ ${count}건 임시 기표 완료.\n왼쪽 메뉴 "미분류 은행거래"에서 세부 계정을 하나씩 정리해주세요.`;
+  alert(msg);
+  document.getElementById('bs-preview').innerHTML = `<div class="alert alert-success" style="margin-top:1rem">${msg.replace(/\n/g,'<br>')}</div>`;
+  _bsParsed = null;
+  if (typeof renderUnclassifiedBank === 'function') renderUnclassifiedBank();
+}
+
+// ── Unclassified bank transactions — review & reclassify one by one ──
+function renderUnclassifiedBank() {
+  const el = document.getElementById('bs-unclassified-list');
+  if (!el) return;
+  const susp = _getSuspenseAccount();
+  const list = susp
+    ? DB.entries.filter(e => e.needsReclass && e.lines.some(l => l.accountId === susp.id))
+        .slice().sort((a, b) => b.date.localeCompare(a.date))
+    : [];
+
+  if (!list.length) {
+    el.innerHTML = `<div class="card" style="text-align:center;color:var(--text-muted);padding:2rem">정리할 미분류 은행거래가 없습니다.</div>`;
+    return;
+  }
+
+  const allAccountOptions = (excludeIds) => DB.accounts
+    .filter(a => !excludeIds.includes(a.id))
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .map(a => `<option value="${a.id}">${a.code} ${a.nameEn || a.nameKr}</option>`).join('');
+
+  el.innerHTML = `
+    <table class="table">
+      <thead><tr>
+        <th>날짜</th><th>내용 (은행 명세서 원문)</th><th class="num">금액 (MYR)</th>
+        <th style="width:260px">실제 계정으로 정리</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${list.map(e => {
+          const suspLine = e.lines.find(l => l.accountId === susp.id);
+          const bankLine = e.lines.find(l => l.accountId !== susp.id);
+          const amt = (suspLine.debit || suspLine.credit || 0);
+          return `<tr data-entry-id="${e.id}">
+            <td style="font-size:.82rem">${e.date}</td>
+            <td style="font-size:.82rem">${escapeHtml(e.description || '')}</td>
+            <td class="num"><strong>${fmtN(amt)}</strong></td>
+            <td>
+              <select class="input bs-reclass-account" data-entry-id="${e.id}" style="font-size:.78rem;padding:.25rem;width:100%">
+                <option value="">-- 실제 계정 선택 --</option>
+                ${allAccountOptions([susp.id, bankLine?.accountId])}
+              </select>
+            </td>
+            <td><button class="btn btn-sm btn-primary" onclick="reclassifyBankEntry('${e.id}')">✓ 정리</button></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:.5rem;font-size:.78rem;color:var(--text-muted)">
+      총 ${list.length}건 | 합계 MYR ${fmtN(list.reduce((s, e) => {
+        const l = e.lines.find(x => x.accountId === susp.id);
+        return s + (l.debit || l.credit || 0);
+      }, 0))}
+    </div>`;
+}
+
+function reclassifyBankEntry(entryId) {
+  const susp = _getSuspenseAccount();
+  const entry = DB.entries.find(e => e.id === entryId);
+  if (!entry || !susp) return;
+  const sel = document.querySelector(`.bs-reclass-account[data-entry-id="${entryId}"]`);
+  const newAccId = sel ? sel.value : '';
+  if (!newAccId) return alert('실제 계정을 선택하세요.');
+  const line = entry.lines.find(l => l.accountId === susp.id);
+  if (!line) return;
+  line.accountId = newAccId;
+  delete entry.needsReclass;
+  entry.source = 'bank-reclassified';
+  saveDB();
+  populateAccountDropdowns();
+  populateLedgerSelect();
+  renderUnclassifiedBank();
 }
 
 // ── Sample data loader ───────────────────────────────

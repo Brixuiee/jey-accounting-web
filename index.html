@@ -47,6 +47,10 @@
         <span class="nav-icon">🏦</span> Bank Statement / 은행명세서
       </a></li>
 
+      <li><a href="#" class="nav-link" data-section="bank-unclassified" style="background:linear-gradient(90deg,#fef3c7,transparent);font-weight:600">
+        <span class="nav-icon">🧾</span> 미분류 은행거래
+      </a></li>
+
       <li><a href="#" class="nav-link" data-section="pending" style="background:linear-gradient(90deg,#fce7f3,transparent);font-weight:600">
         <span class="nav-icon">⏸️</span> 미결거래 (Pending)
       </a></li>
@@ -327,8 +331,10 @@
       <div class="card" style="background:linear-gradient(135deg,#dbeafe,#eff6ff);border-left:4px solid #2563a8">
         <h3 style="font-size:1rem;margin-bottom:.4rem">은행 명세서를 한 곳에서 처리</h3>
         <p style="font-size:.82rem;color:#1e40af;line-height:1.6">
-          은행에서 받은 CSV 명세서를 업로드하면 시스템이 각 라인을 자동 분류 → Receipt/Payment/비용분개로 일괄 등록.
+          은행에서 받은 CSV 또는 PDF 명세서를 업로드하면 시스템이 각 라인을 자동 분류 → Receipt/Payment/비용분개로 일괄 등록.
           <strong>이미 입력된 거래는 자동 매칭</strong>되어 중복 방지. <strong>잔액 대조</strong>도 자동.
+          세부 계정을 아직 모르면 <strong>"⚡ 전부 미분류로 즉시 기표"</strong>로 은행 잔액만 먼저 맞춰두고,
+          <strong>"미분류 은행거래"</strong> 메뉴에서 나중에 하나씩 정리할 수도 있습니다.
         </p>
       </div>
 
@@ -342,10 +348,10 @@
             </select>
           </div>
           <div class="form-group">
-            <label>CSV 파일 업로드</label>
+            <label>CSV / PDF 파일 업로드</label>
             <label class="btn btn-outline" style="cursor:pointer;display:inline-block">
-              📁 CSV 파일 선택
-              <input type="file" accept=".csv,.txt" style="display:none" onchange="onBSFileChange(event)">
+              📁 CSV 또는 PDF 파일 선택
+              <input type="file" accept=".csv,.txt,.pdf" style="display:none" onchange="onBSFileChange(event)">
             </label>
             <span style="font-size:.72rem;color:var(--text-muted);margin-left:.5rem">또는 아래에 직접 붙여넣기 ↓</span>
           </div>
@@ -404,6 +410,21 @@
           ✓ <strong>이미 입력된 거래는 자동 매칭:</strong> 같은 은행 계정 · 날짜(±2일) · 동일 금액의 Receipt/Payment/Journal이 있으면 녹색으로 표시하고 자동으로 건너뜁니다. 중복 입력 걱정 없음.
         </p>
       </div>
+    </section>
+
+    <!-- UNCLASSIFIED BANK TRANSACTIONS -->
+    <section id="section-bank-unclassified" class="section">
+      <div class="section-header">
+        <h1>🧾 미분류 은행거래 / Unclassified Bank Transactions</h1>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#fef3c7,#fffbeb);border-left:4px solid #d97706;margin-bottom:1rem">
+        <p style="font-size:.82rem;color:#92400e;line-height:1.6">
+          Bank Statement 화면에서 <strong>"⚡ 전부 미분류로 즉시 기표"</strong>로 등록한 거래 목록입니다.
+          은행 잔액은 이미 정확히 반영되어 있고, 상대 계정만 <strong>"2010 은행거래 미정리"</strong>로 임시 처리된 상태입니다.
+          아래에서 실제 계정을 하나씩 선택하고 [✓ 정리]를 누르면, 새 분개를 만드는 게 아니라 <strong>기존 분개의 계정만 바꿔치기</strong>합니다.
+        </p>
+      </div>
+      <div id="bs-unclassified-list"></div>
     </section>
 
     <!-- CHART OF ACCOUNTS -->

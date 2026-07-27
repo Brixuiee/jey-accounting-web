@@ -326,6 +326,7 @@ function showSection(name) {
   if (name==='import')       { renderImportSection(); renderBackupPanel(); }
   if (name==='quick-entry')  { if (typeof renderQuickEntry === 'function') renderQuickEntry(); }
   if (name==='bank-statement') { if (typeof renderBankStatement === 'function') renderBankStatement(); }
+  if (name==='bank-unclassified') { if (typeof renderUnclassifiedBank === 'function') renderUnclassifiedBank(); }
   if (name==='tax-cp58')        { if (typeof renderCP58 === 'function') renderCP58(); }
   if (name==='tax-computation') { if (typeof renderTaxComputation === 'function') renderTaxComputation(); }
   if (name==='tax-calendar')    { if (typeof renderTaxCalendar === 'function') renderTaxCalendar(); }

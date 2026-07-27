@@ -637,7 +637,6 @@ function commitBankStatementAsSuspense() {
         {accountId: susp.id, debit: 0, credit: amt},
       ],
       source: 'bank-suspense',
-      needsReclass: true,
     });
     count++;
   });
@@ -657,8 +656,11 @@ function renderUnclassifiedBank() {
   const el = document.getElementById('bs-unclassified-list');
   if (!el) return;
   const susp = _getSuspenseAccount();
+  // Identified purely by data shape (a line still pointing at the suspense
+  // account) rather than a separate flag — flags on the entry object don't
+  // survive the Supabase round-trip (only `lines` is synced), but this does.
   const list = susp
-    ? DB.entries.filter(e => e.needsReclass && e.lines.some(l => l.accountId === susp.id))
+    ? DB.entries.filter(e => e.lines.some(l => l.accountId === susp.id))
         .slice().sort((a, b) => b.date.localeCompare(a.date))
     : [];
 
@@ -716,7 +718,6 @@ function reclassifyBankEntry(entryId) {
   const line = entry.lines.find(l => l.accountId === susp.id);
   if (!line) return;
   line.accountId = newAccId;
-  delete entry.needsReclass;
   entry.source = 'bank-reclassified';
   saveDB();
   populateAccountDropdowns();

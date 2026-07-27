@@ -72,7 +72,7 @@ async function loadEntriesFromSupabase(opts = {}) {
 
   return (data || []).map(r => ({
     id: r.id, date: r.entry_date, description: r.description || '',
-    ref: r.ref || '', lines: r.lines
+    reference: r.ref || '', lines: r.lines
   }));
 }
 
@@ -82,7 +82,7 @@ async function _bulkUpsertEntries(entries, userId) {
   for (let i = 0; i < entries.length; i += CHUNK) {
     const chunk = entries.slice(i, i + CHUNK).map(e => ({
       id: e.id, user_id: userId, entry_date: e.date,
-      description: e.description, ref: e.ref || '',
+      description: e.description, ref: e.reference || '',
       lines: e.lines, updated_at: new Date().toISOString()
     }));
     const { error } = await _supabase.from('entries').upsert(chunk);

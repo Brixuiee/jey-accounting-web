@@ -16,20 +16,38 @@
 
 // ── Phase 2: 계정과목 (accounts) ──────────────────────
 
+// `audit_code`(감사법인 GL 코드) and `contra`(차감계정 표시) are newer columns.
+// A project whose accounts table predates them would fail the whole query, so
+// we probe once and fall back to the original column set — the app then keeps
+// working, just without carrying those two fields through the cloud.
+let _accountsHaveExtraCols = true;
+const _ACC_COLS_FULL = 'id, code, name_kr, name_en, type, audit_code, contra';
+const _ACC_COLS_BASE = 'id, code, name_kr, name_en, type';
+
+function _missingColumn(error) {
+  const m = (error?.message || '').toLowerCase();
+  return m.includes('column') || m.includes('does not exist') || error?.code === '42703';
+}
+
 async function loadAccountsFromSupabase() {
   const session = await getSupabaseSession();
   if (!session) return null;
 
-  const { data, error } = await _supabase
-    .from('accounts')
-    .select('id, code, name_kr, name_en, type')
-    .order('code');
+  const fetch = cols => _supabase.from('accounts').select(cols).order('code');
+  let { data, error } = await fetch(_accountsHaveExtraCols ? _ACC_COLS_FULL : _ACC_COLS_BASE);
+  if (error && _accountsHaveExtraCols && _missingColumn(error)) {
+    console.warn('accounts: audit_code/contra 컬럼 없음 — 기본 컬럼으로 재시도합니다.');
+    _accountsHaveExtraCols = false;
+    ({ data, error } = await fetch(_ACC_COLS_BASE));
+  }
 
   if (error) { console.warn('loadAccountsFromSupabase:', error.message); return null; }
   if (!data || data.length === 0) return [];
 
   return data.map(r => ({
-    id: r.id, code: r.code, nameKr: r.name_kr, nameEn: r.name_en, type: r.type
+    id: r.id, code: r.code, nameKr: r.name_kr, nameEn: r.name_en, type: r.type,
+    ...(r.audit_code ? { auditCode: r.audit_code } : {}),
+    ...(r.contra     ? { contra: true }          : {}),
   }));
 }
 
@@ -37,10 +55,18 @@ async function _bulkUpsertAccounts(accounts, userId) {
   if (!accounts.length) return;
   const CHUNK = 100;
   for (let i = 0; i < accounts.length; i += CHUNK) {
-    const rows = accounts.slice(i, i + CHUNK).map(a => ({
+    const chunk = accounts.slice(i, i + CHUNK);
+    const base = a => ({
       id: a.id, code: a.code, name_kr: a.nameKr, name_en: a.nameEn, type: a.type, user_id: userId
-    }));
-    const { error } = await _supabase.from('accounts').upsert(rows);
+    });
+    const full = a => ({ ...base(a), audit_code: a.auditCode || null, contra: !!a.contra });
+
+    let { error } = await _supabase.from('accounts').upsert(chunk.map(_accountsHaveExtraCols ? full : base));
+    if (error && _accountsHaveExtraCols && _missingColumn(error)) {
+      console.warn('accounts: audit_code/contra 컬럼 없음 — 기본 컬럼으로 저장합니다.');
+      _accountsHaveExtraCols = false;
+      ({ error } = await _supabase.from('accounts').upsert(chunk.map(base)));
+    }
     if (error) throw error;
   }
 }

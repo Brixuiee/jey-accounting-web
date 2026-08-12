@@ -46,6 +46,68 @@ const DEFAULT_ACCOUNTS = [
   {id:'a5010',code:'5010',nameKr:'기타비용',nameEn:'Other Expenses',type:'expense'},
 ];
 
+// ── Audit-firm chart alignment ────────────────────────
+// The external auditor's GL numbers accounts differently (assets 1xxxx,
+// liabilities 3xxxx, equity 4xxxx, revenue 5xxxx, COGS 6xxxx, expenses 7xxxx).
+// This app keeps its own 4-digit codes — well over a hundred places look
+// accounts up by them — and carries the auditor's code alongside as
+// `auditCode`, so the two ledgers reconcile line by line.
+//
+// Codes 2010-2015 and 5011-5017 are claimed by the payroll / WHT / tax /
+// assets / forex modules, which auto-create them on demand. New detail
+// accounts therefore start at 2016 and 5018.
+const AUDIT_CODE_MAP = {
+  '1001':'11200', '1002':'11310', '1003':'12100', '1006':'32100', '1007':'11320',
+  '1500':'25100', '1501':'25110',
+  '2001':'31100', '2002':'35100', '2003':'33000',
+  '3001':'41100', '3002':'40067',
+  '4002':'51300',
+  '5001':'61100', '5003':'72100', '5004':'72700', '5006':'72500', '5009':'70400',
+};
+
+const AUDIT_DETAIL_ACCOUNTS = [
+  // Balance-sheet items the auditor tracks as their own accounts
+  {id:'a1008',code:'1008',nameKr:'보증금',    nameEn:'Deposits Paid',      type:'asset',    auditCode:'14100'},
+  {id:'a1009',code:'1009',nameKr:'기타채권',  nameEn:'Other Debtors',      type:'asset',    auditCode:'12300'},
+  {id:'a1010',code:'1010',nameKr:'이사계정',  nameEn:"Director's Account", type:'asset',    auditCode:'16100'},
+  {id:'a2016',code:'2016',nameKr:'이사 소득세 미지급금',nameEn:"Director's Income Tax Payable",type:'liability',auditCode:'34400'},
+  {id:'a2017',code:'2017',nameKr:'SST 매출세액',nameEn:'Sales/Output Tax', type:'liability',auditCode:'32200'},
+  // Expense detail — the categories a director's monthly claim splits into
+  {id:'a5018',code:'5018',nameKr:'이사보수',      nameEn:'Director Fee',              type:'expense',auditCode:'71300'},
+  {id:'a5019',code:'5019',nameKr:'사무용품비',    nameEn:'Office Supplies',           type:'expense',auditCode:'72200'},
+  {id:'a5020',code:'5020',nameKr:'인쇄비',        nameEn:'Printing & Stationery',     type:'expense',auditCode:'72400'},
+  {id:'a5021',code:'5021',nameKr:'냉방비',        nameEn:'Chilled Water',             type:'expense',auditCode:'72810'},
+  {id:'a5022',code:'5022',nameKr:'주유/통행료/주차',nameEn:'Petrol/Toll/Parking',     type:'expense',auditCode:'72900'},
+  {id:'a5023',code:'5023',nameKr:'차량유지비',    nameEn:'Motor Vehicle Maintenance', type:'expense',auditCode:'73100'},
+  {id:'a5024',code:'5024',nameKr:'숙박비',        nameEn:'Accommodation',             type:'expense',auditCode:'73210'},
+  {id:'a5025',code:'5025',nameKr:'여비교통비',    nameEn:'Travelling',                type:'expense',auditCode:'73310'},
+  {id:'a5026',code:'5026',nameKr:'접대비',        nameEn:'Entertainment',             type:'expense',auditCode:'73320'},
+  {id:'a5027',code:'5027',nameKr:'체육활동비',    nameEn:'Sports Activities',         type:'expense',auditCode:'73360'},
+  {id:'a5028',code:'5028',nameKr:'비자수수료',    nameEn:'Visa Fees',                 type:'expense',auditCode:'73820'},
+  {id:'a5029',code:'5029',nameKr:'다과/식대',     nameEn:'Refreshment',               type:'expense',auditCode:'76000'},
+  {id:'a5030',code:'5030',nameKr:'기장수수료',    nameEn:'Bookkeeping',               type:'expense',auditCode:'70910'},
+  {id:'a5031',code:'5031',nameKr:'법인비서수수료',nameEn:'Secretarial Fees',          type:'expense',auditCode:'70930'},
+  {id:'a5032',code:'5032',nameKr:'세무수수료',    nameEn:'Taxation Fees',             type:'expense',auditCode:'70931'},
+];
+
+// Idempotent — safe to run on every load. Returns true if anything changed.
+function ensureAuditChartAccounts() {
+  let changed = false;
+  // The bank-import suspense account was first created as 2010, which
+  // payroll.js also claims for 미지급 급여; move it clear of that block.
+  const suspense = DB.accounts.find(a => /은행거래\s*미정리/.test(a.nameKr || ''));
+  if (suspense && suspense.code !== '2020') { suspense.code = '2020'; changed = true; }
+
+  for (const acc of DB.accounts) {
+    const mapped = AUDIT_CODE_MAP[acc.code];
+    if (mapped && acc.auditCode !== mapped) { acc.auditCode = mapped; changed = true; }
+  }
+  for (const def of AUDIT_DETAIL_ACCOUNTS) {
+    if (!DB.accounts.find(a => a.code === def.code)) { DB.accounts.push({...def}); changed = true; }
+  }
+  return changed;
+}
+
 // ── State ─────────────────────────────────────────────
 const DEFAULT_SETTINGS = {
   companyName: 'JEY & Company Sdn Bhd',
@@ -91,6 +153,7 @@ function loadDB() {
     if (!DB.accounts.find(a=>a.code==='1006')) {
       DB.accounts.push({id:'a1006',code:'1006',nameKr:'SST 매입세액',nameEn:'SST Input Tax',type:'asset'});
     }
+    ensureAuditChartAccounts();
     // 디버그 정보
     console.log('✅ DB 로드됨:', {
       accounts: DB.accounts.length,
@@ -108,6 +171,7 @@ function loadDB() {
     };
     // Add SST input account by default
     DB.accounts.push({id:'a1006',code:'1006',nameKr:'SST 매입세액',nameEn:'SST Input Tax',type:'asset'});
+    ensureAuditChartAccounts();
     console.log('⚠️ localStorage 없음 - 기본값으로 초기화됨');
     saveDB();
   }
@@ -327,6 +391,7 @@ function showSection(name) {
   if (name==='quick-entry')  { if (typeof renderQuickEntry === 'function') renderQuickEntry(); }
   if (name==='bank-statement') { if (typeof renderBankStatement === 'function') renderBankStatement(); }
   if (name==='bank-unclassified') { if (typeof renderUnclassifiedBank === 'function') renderUnclassifiedBank(); }
+  if (name==='director-claim')    { if (typeof renderDirectorClaim === 'function') renderDirectorClaim(); }
   if (name==='tax-cp58')        { if (typeof renderCP58 === 'function') renderCP58(); }
   if (name==='tax-computation') { if (typeof renderTaxComputation === 'function') renderTaxComputation(); }
   if (name==='tax-calendar')    { if (typeof renderTaxCalendar === 'function') renderTaxCalendar(); }
@@ -517,6 +582,7 @@ function renderAccounts() {
           <div>
             <span class="acc-code">${a.code}</span>
             <span class="acc-name">${a.nameKr}</span>
+            ${a.auditCode?`<span title="감사법인 GL 코드" style="font-size:.62rem;color:#6366f1;background:#eef2ff;border-radius:3px;padding:.05rem .3rem;margin-left:.3rem">감사 ${a.auditCode}</span>`:''}
             ${a.contra?'<span style="font-size:.65rem;color:#94a3b8;margin-left:.3rem">[차감]</span>':''}
             <div style="font-size:.68rem;color:#94a3b8">${a.nameEn}</div>
           </div>
@@ -536,6 +602,8 @@ function openAccountModal(id=null) {
   const nameField = document.getElementById('acc-name');
   if (nameField) nameField.value = acc ? (acc.nameEn ? `${acc.nameEn} | ${acc.nameKr}` : acc.nameKr) : '';
   document.getElementById('acc-type').value   = acc ? acc.type    : 'asset';
+  const auditEl = document.getElementById('acc-audit-code');
+  if (auditEl) auditEl.value = acc ? (acc.auditCode || '') : '';
   const contraEl = document.getElementById('acc-contra');
   if (contraEl) contraEl.checked = acc ? !!acc.contra : false;
   document.getElementById('acc-edit-id').value= acc ? acc.id      : '';
@@ -561,11 +629,12 @@ function saveAccount() {
   // Map 'cogs' (UI) → 'expense' (logic) but flag with subType
   const dbType = (type==='cogs') ? 'expense' : type;
   const subType = (type==='cogs') ? 'cogs' : null;
+  const auditCode = (document.getElementById('acc-audit-code')?.value||'').trim();
   if (editId) {
     const a = getAccount(editId);
-    Object.assign(a,{code,nameKr,nameEn,type:dbType,subType,contra});
+    Object.assign(a,{code,nameKr,nameEn,type:dbType,subType,contra,auditCode});
   } else {
-    DB.accounts.push({id:uid(),code,nameKr,nameEn,type:dbType,subType,contra});
+    DB.accounts.push({id:uid(),code,nameKr,nameEn,type:dbType,subType,contra,auditCode});
   }
   saveDB(); closeModal('modal-account'); renderAccounts();
   populateLedgerSelect();

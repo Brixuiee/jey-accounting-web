@@ -611,8 +611,12 @@ function commitBankStatement() {
 // ── "Post first, classify later" — bulk-post everything unmatched to a
 //    suspense/clearing account so the bank balance is right immediately,
 //    then reclassify each one individually later (see renderUnclassifiedBank). ──
+// 2020, not 2010: payroll.js reserves 2010-2015 for its own auto-created
+// accounts (미지급 급여 / EPF / SOCSO / EIS / PCB) and would otherwise post
+// salaries payable into this suspense account. The name fallback also catches
+// the account created before the code was moved.
 function _getSuspenseAccount() {
-  return DB.accounts.find(a => a.code === '2010') || DB.accounts.find(a => /은행거래\s*미정리/.test(a.nameKr || ''));
+  return DB.accounts.find(a => a.code === '2020') || DB.accounts.find(a => /은행거래\s*미정리/.test(a.nameKr || ''));
 }
 
 function commitBankStatementAsSuspense() {

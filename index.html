@@ -51,6 +51,10 @@
         <span class="nav-icon">🧾</span> 미분류 은행거래
       </a></li>
 
+      <li><a href="#" class="nav-link" data-section="director-claim" style="background:linear-gradient(90deg,#ede9fe,transparent);font-weight:600">
+        <span class="nav-icon">🧳</span> 이사 비용정산
+      </a></li>
+
       <li><a href="#" class="nav-link" data-section="pending" style="background:linear-gradient(90deg,#fce7f3,transparent);font-weight:600">
         <span class="nav-icon">⏸️</span> 미결거래 (Pending)
       </a></li>
@@ -425,6 +429,23 @@
         </p>
       </div>
       <div id="bs-unclassified-list"></div>
+    </section>
+
+    <!-- DIRECTOR EXPENSE CLAIM -->
+    <section id="section-director-claim" class="section">
+      <div class="section-header">
+        <h1>🧳 이사 비용정산 / Director Expense Claim</h1>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#ede9fe,#f5f3ff);border-left:4px solid #7c3aed;margin-bottom:1rem">
+        <p style="font-size:.82rem;color:#5b21b6;line-height:1.6">
+          이사가 한 달 동안 쓴 <strong>주유·통행료·접대비·숙박비·다과비</strong> 등을 회사가 한 번에 몰아서 지급하는 경우에 사용합니다.
+          지급총액을 적고 세부 내역을 나눠 적으면, 감사법인 원장과 <strong>동일한 형태로 분개 2건</strong>(지급 → 세부정산)이 자동 생성됩니다.
+          합계가 지급총액과 맞지 않으면 등록되지 않습니다.
+        </p>
+      </div>
+      <div id="dc-form"></div>
+      <h3 style="margin:1.5rem 0 .5rem">최근 정산 내역</h3>
+      <div id="dc-history"></div>
     </section>
 
     <!-- CHART OF ACCOUNTS -->
@@ -1047,6 +1068,13 @@
       <div class="form-group">
         <label>Account Name *</label>
         <input type="text" id="acc-name" class="input" placeholder="e.g. Cash in Hand">
+      </div>
+      <div class="form-group">
+        <label>감사법인 GL 코드 (Audit GL Code)</label>
+        <input type="text" id="acc-audit-code" class="input" placeholder="e.g. 72900">
+        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.25rem">
+          감사법인 원장의 계정코드를 적어두면 결산·감사 대조 시 1:1로 맞출 수 있습니다. (비워둬도 됩니다)
+        </div>
       </div>
       <div class="form-group">
         <label style="display:flex;align-items:center;gap:.5rem;font-weight:normal">
@@ -1934,6 +1962,7 @@
 <script src="js/import.js"></script>
 <script src="js/quick-entry.js"></script>
 <script src="js/bank-statement.js"></script>
+<script src="js/director-claim.js"></script>
 <script src="js/assets.js"></script>
 <script src="js/tax.js"></script>
 <script src="js/closing.js"></script>

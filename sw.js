@@ -1,5 +1,5 @@
 // JEY Accounting — Service Worker (offline-first cache)
-const CACHE = 'jey-accounting-v12';
+const CACHE = 'jey-accounting-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './js/ar.js',
   './js/assets.js',
   './js/bank-statement.js',
+  './js/director-claim.js',
   './js/closing.js',
   './js/cloud-backup.js',
   './js/forex.js',

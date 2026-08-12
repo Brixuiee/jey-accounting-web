@@ -153,7 +153,9 @@ function loadDB() {
     if (!DB.accounts.find(a=>a.code==='1006')) {
       DB.accounts.push({id:'a1006',code:'1006',nameKr:'SST 매입세액',nameEn:'SST Input Tax',type:'asset'});
     }
-    ensureAuditChartAccounts();
+    // Persist immediately when the migration adds/moves accounts, so the new
+    // chart reaches localStorage and the cloud even if the user only reads.
+    if (ensureAuditChartAccounts()) saveDB();
     // 디버그 정보
     console.log('✅ DB 로드됨:', {
       accounts: DB.accounts.length,

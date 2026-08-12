@@ -21,8 +21,18 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   }
 })();
 
-// Initialize Supabase client
-const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client.
+// The auth options are Supabase's defaults, but spelled out because this app
+// depends on them: the session must survive closing the browser (한 번 로그인하면
+// 계속 유지), and the access token must renew itself in the background so an
+// expired token never bounces the user back to the login screen.
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,       // localStorage에 세션 보관 → 재방문 시 자동 로그인
+    autoRefreshToken: true,     // 만료 전 토큰 자동 갱신
+    detectSessionInUrl: false,  // OAuth 리디렉션 플로우를 쓰지 않음
+  },
+});
 
 /**
  * Check if user is authenticated and get current session

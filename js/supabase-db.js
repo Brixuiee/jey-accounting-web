@@ -212,7 +212,7 @@ window.syncAllToSupabase = async function () {
 
 // ── 초기화: 로그인 후 Supabase에서 데이터 로드 ─────────
 
-async function initSupabaseData() {
+async function initSupabaseData(_retried = false) {
   const session = await getSupabaseSession();
   if (!session) return;
 
@@ -279,16 +279,34 @@ async function initSupabaseData() {
   } catch (e) {
     console.error('initSupabaseData 실패:', e);
     const msg = (e.message || '').toLowerCase();
-    const isAuthError = msg.includes('jwt') || msg.includes('invalid') ||
-                        msg.includes('unauthorized') || msg.includes('forbidden') ||
-                        msg.includes('fetch') || msg.includes('failed to fetch') ||
-                        msg.includes('networkerror');
+
+    // A dropped connection is not a failed login. Signing out here would throw
+    // away a perfectly good persisted session and make the user type their
+    // password again after any Wi-Fi hiccup, laptop wake, or slow Supabase
+    // response — so network faults keep the session and fall back to local data.
+    // 'invalid' alone is also too broad (it matches ordinary SQL errors), hence
+    // the narrower token/claim wording below.
+    const isNetworkError = msg.includes('fetch') || msg.includes('network') ||
+                           msg.includes('timeout') || msg.includes('abort');
+    const isAuthError = !isNetworkError && (
+      msg.includes('jwt') || msg.includes('unauthorized') || msg.includes('forbidden') ||
+      msg.includes('invalid token') || msg.includes('invalid claim') ||
+      msg.includes('session') && msg.includes('expired'));
+
     if (isAuthError) {
-      console.warn('인증/네트워크 오류 — 세션 초기화 후 재로그인');
+      // Try the refresh token before falling back to a password prompt.
+      if (!_retried) {
+        const refreshed = await _supabase.auth.refreshSession().catch(() => null);
+        if (refreshed && refreshed.data && refreshed.data.session) {
+          _showSyncBanner('🔄 세션 갱신 — 다시 시도합니다', 2500);
+          return initSupabaseData(true);
+        }
+      }
+      console.warn('인증 만료 — 재로그인 필요');
       await _supabase.auth.signOut().catch(() => {});
       if (typeof showLoginScreen === 'function') showLoginScreen();
     } else {
-      _showSyncBanner('⚠️ 동기화 실패 — 로컬 데이터로 계속합니다', 4000);
+      _showSyncBanner('⚠️ 클라우드 연결 실패 — 로컬 데이터로 계속합니다 (로그인 유지됨)', 4000);
     }
   }
 }

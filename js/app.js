@@ -62,7 +62,10 @@ const AUDIT_CODE_MAP = {
   '2001':'31100', '2002':'35100', '2003':'33000',
   '3001':'41100', '3002':'40067',
   '4002':'51300',
-  '5001':'61100', '5003':'72100', '5004':'72700', '5006':'72500', '5009':'70400',
+  // 5004 공과금은 여기 없다 — 상위(총괄) 계정이라 감사법인 단일 계정에 대응하지
+  // 않는다(72700 Electricity + 72810 Chilled Water 를 아우름). 세부 계정인
+  // 5033 전기료가 72700을 갖는다.
+  '5001':'61100', '5003':'72100', '5006':'72500', '5009':'70400',
 };
 
 const AUDIT_DETAIL_ACCOUNTS = [
@@ -88,6 +91,19 @@ const AUDIT_DETAIL_ACCOUNTS = [
   {id:'a5030',code:'5030',nameKr:'기장수수료',    nameEn:'Bookkeeping',               type:'expense',auditCode:'70910'},
   {id:'a5031',code:'5031',nameKr:'법인비서수수료',nameEn:'Secretarial Fees',          type:'expense',auditCode:'70930'},
   {id:'a5032',code:'5032',nameKr:'세무수수료',    nameEn:'Taxation Fees',             type:'expense',auditCode:'70931'},
+  // 공과금(5004) 세부 — 5004는 상위 총괄, 실제 기표는 아래 4개로 나눠 한다.
+  // Telecom은 기존 5006 통신비, Airconditioning은 기존 5021 냉방비를 그대로 쓴다.
+  // 인터넷(Unifi)은 감사법인이 72500 Office Telephone에 넣으므로 5006과 같은
+  // 코드를 가리킨다(다대일 매핑 — 대조 시 합산되는 게 맞다).
+  {id:'a5033',code:'5033',nameKr:'전기료',        nameEn:'Electricity',               type:'expense',auditCode:'72700'},
+  {id:'a5034',code:'5034',nameKr:'인터넷',        nameEn:'Internet',                  type:'expense',auditCode:'72500'},
+  // EPF — payroll.js의 ensurePayrollAccounts()도 같은 코드로 정의한다.
+  // 양쪽 다 code로 존재 여부를 확인한 뒤 만들므로 중복 생성되지 않는다.
+  // 이름을 바꿀 때는 payroll.js:14~ 정의도 같이 맞출 것.
+  // 2025-10-01부터 비말레이시아 국적자 EPF 의무화(노사 각 2%) — 감사법인 원장에는
+  // 그전 규정이라 대응 계정이 없어 감사코드를 두지 않는다.
+  {id:'a2011',code:'2011',nameKr:'EPF 미지급금',  nameEn:'EPF Payable',               type:'liability'},
+  {id:'a5013',code:'5013',nameKr:'EPF 회사부담분',nameEn:'EPF Employer Contribution', type:'expense'},
 ];
 
 // Idempotent — safe to run on every load. Returns true if anything changed.
@@ -97,6 +113,11 @@ function ensureAuditChartAccounts() {
   // payroll.js also claims for 미지급 급여; move it clear of that block.
   const suspense = DB.accounts.find(a => /은행거래\s*미정리/.test(a.nameKr || ''));
   if (suspense && suspense.code !== '2020') { suspense.code = '2020'; changed = true; }
+
+  // 5004 공과금은 예전 버전에서 72700(Electricity)을 달고 있었다. 이제 그 코드는
+  // 세부 계정인 5033 전기료가 갖고, 5004는 총괄 계정으로 감사코드를 갖지 않는다.
+  const umbrella = DB.accounts.find(a => a.code === '5004');
+  if (umbrella && umbrella.auditCode) { delete umbrella.auditCode; changed = true; }
 
   for (const acc of DB.accounts) {
     const mapped = AUDIT_CODE_MAP[acc.code];

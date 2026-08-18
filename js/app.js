@@ -66,6 +66,9 @@ const AUDIT_CODE_MAP = {
   // 않는다(72700 Electricity + 72810 Chilled Water 를 아우름). 세부 계정인
   // 5033 전기료가 72700을 갖는다.
   '5001':'61100', '5003':'72100', '5006':'72500', '5009':'70400',
+  // 아래 셋은 기존 설치본의 잘못된/누락된 매핑을 덮어쓰기 위해 여기에 둔다.
+  // (MySoft 원장 실물 확인 결과 — 5013은 71500 EPF, 5034는 72510 Office internet)
+  '5013':'71500', '5014':'71600', '5034':'72510',
 };
 
 const AUDIT_DETAIL_ACCOUNTS = [
@@ -96,14 +99,33 @@ const AUDIT_DETAIL_ACCOUNTS = [
   // 인터넷(Unifi)은 감사법인이 72500 Office Telephone에 넣으므로 5006과 같은
   // 코드를 가리킨다(다대일 매핑 — 대조 시 합산되는 게 맞다).
   {id:'a5033',code:'5033',nameKr:'전기료',        nameEn:'Electricity',               type:'expense',auditCode:'72700'},
-  {id:'a5034',code:'5034',nameKr:'인터넷',        nameEn:'Internet',                  type:'expense',auditCode:'72500'},
+  {id:'a5034',code:'5034',nameKr:'인터넷',        nameEn:'Internet',                  type:'expense',auditCode:'72510'},
   // EPF — payroll.js의 ensurePayrollAccounts()도 같은 코드로 정의한다.
   // 양쪽 다 code로 존재 여부를 확인한 뒤 만들므로 중복 생성되지 않는다.
   // 이름을 바꿀 때는 payroll.js:14~ 정의도 같이 맞출 것.
   // 2025-10-01부터 비말레이시아 국적자 EPF 의무화(노사 각 2%) — 감사법인 원장에는
   // 그전 규정이라 대응 계정이 없어 감사코드를 두지 않는다.
   {id:'a2011',code:'2011',nameKr:'EPF 미지급금',  nameEn:'EPF Payable',               type:'liability'},
-  {id:'a5013',code:'5013',nameKr:'EPF 회사부담분',nameEn:'EPF Employer Contribution', type:'expense'},
+  {id:'a5013',code:'5013',nameKr:'EPF 회사부담분',nameEn:'EPF Employer Contribution', type:'expense',auditCode:'71500'},
+  // SOCSO — payroll.js와 코드·이름을 맞춘다(중복 생성 방지).
+  {id:'a2012',code:'2012',nameKr:'SOCSO 미지급금',nameEn:'SOCSO Payable',             type:'liability'},
+  {id:'a5014',code:'5014',nameKr:'SOCSO 회사부담분',nameEn:'SOCSO Employer Contribution',type:'expense',auditCode:'71600'},
+  // MySoft(Mr. Accounting) 원장에는 있으나 이 앱에 없던 비용 계정들.
+  // 구 유통사업 계정(Spare Parts·Import Duty·Freight 등)과 파트너십 자본계정은
+  // 현재 사업과 무관해 의도적으로 제외했다.
+  {id:'a5035',code:'5035',nameKr:'상여금',        nameEn:'Bonus',                     type:'expense',auditCode:'71400'},
+  {id:'a5036',code:'5036',nameKr:'복리후생비',    nameEn:'Staff Welfare',             type:'expense',auditCode:'72000'},
+  {id:'a5037',code:'5037',nameKr:'우편·택배비',   nameEn:'Postage & Courier',         type:'expense',auditCode:'72300'},
+  {id:'a5038',code:'5038',nameKr:'휴대폰',        nameEn:'Mobile Phone',              type:'expense',auditCode:'72600'},
+  {id:'a5039',code:'5039',nameKr:'수도료',        nameEn:'Water',                     type:'expense',auditCode:'72800'},
+  {id:'a5040',code:'5040',nameKr:'정기주차',      nameEn:'Season Parking',            type:'expense',auditCode:'73000'},
+  {id:'a5041',code:'5041',nameKr:'출장지경비',    nameEn:'Outstation Expense',        type:'expense',auditCode:'73200'},
+  {id:'a5042',code:'5042',nameKr:'클럽회비',      nameEn:'Club Membership',           type:'expense',auditCode:'73330'},
+  {id:'a5043',code:'5043',nameKr:'운동용품',      nameEn:'Sport Equipment',           type:'expense',auditCode:'73340'},
+  {id:'a5044',code:'5044',nameKr:'도서',          nameEn:'Books',                     type:'expense',auditCode:'73350'},
+  {id:'a5045',code:'5045',nameKr:'기부·선물',     nameEn:'Gifts & Donations',         type:'expense',auditCode:'73600'},
+  {id:'a5046',code:'5046',nameKr:'유지보수',      nameEn:'Maintenance',               type:'expense',auditCode:'73700'},
+  {id:'a5047',code:'5047',nameKr:'사무실·기기 관리',nameEn:'Upkeep of Office & Equipment',type:'expense',auditCode:'73710'},
 ];
 
 // Idempotent — safe to run on every load. Returns true if anything changed.

@@ -69,6 +69,9 @@ const AUDIT_CODE_MAP = {
   // 아래 셋은 기존 설치본의 잘못된/누락된 매핑을 덮어쓰기 위해 여기에 둔다.
   // (MySoft 원장 실물 확인 결과 — 5013은 71500 EPF, 5034는 72510 Office internet)
   '5013':'71500', '5014':'71600', '5034':'72510',
+  // MySoft 과거 원장(2017.7~2022.6) 이관 시 대응 계정이 이미 있었는데 감사코드만
+  // 안 달려 있던 것들.
+  '5002':'71100', '5008':'70600', '5012':'70940',
 };
 
 const AUDIT_DETAIL_ACCOUNTS = [
@@ -138,6 +141,14 @@ const AUDIT_DETAIL_ACCOUNTS = [
   {id:'a5051',code:'5051',nameKr:'은행 SST',          nameEn:'Bank SST Tax',               type:'expense'},
   {id:'a5052',code:'5052',nameKr:'계좌이체 수수료',    nameEn:'Bank Transfer Fee',          type:'expense'},
   {id:'a4007',code:'4007',nameKr:'세금환급',          nameEn:'Tax Refund',                 type:'revenue'},
+  // 2026-09 추가: MySoft 원장(2017.7~2022.6, 감사 안 된 5개 회계연도)을 JEY로
+  // 이관하면서 대응 계정이 없던 것들. 구 유통사업(무역업) 매출은 현재의 수수료
+  // 사업과 성격이 달라 별도 계정으로 분리했다.
+  {id:'a4008',code:'4008',nameKr:'매출-구유통사업',    nameEn:'Sales (Legacy Trading)',     type:'revenue',auditCode:'51100'},
+  {id:'a5053',code:'5053',nameKr:'컨설팅수수료',      nameEn:'Consultancy Fees',           type:'expense',auditCode:'65100'},
+  {id:'a5054',code:'5054',nameKr:'인허가수수료',      nameEn:'Licence Fees',               type:'expense',auditCode:'70920'},
+  {id:'a5056',code:'5056',nameKr:'감사보수',          nameEn:'Audit Fee',                  type:'expense',auditCode:'71000'},
+  {id:'a5057',code:'5057',nameKr:'의료비',            nameEn:'Medical Fee',                type:'expense',auditCode:'74600'},
 ];
 
 // Idempotent — safe to run on every load. Returns true if anything changed.

@@ -96,8 +96,9 @@ const AUDIT_DETAIL_ACCOUNTS = [
   {id:'a5032',code:'5032',nameKr:'세무수수료',    nameEn:'Taxation Fees',             type:'expense',auditCode:'70931'},
   // 공과금(5004) 세부 — 5004는 상위 총괄, 실제 기표는 아래 4개로 나눠 한다.
   // Telecom은 기존 5006 통신비, Airconditioning은 기존 5021 냉방비를 그대로 쓴다.
-  // 인터넷(Unifi)은 감사법인이 72500 Office Telephone에 넣으므로 5006과 같은
-  // 코드를 가리킨다(다대일 매핑 — 대조 시 합산되는 게 맞다).
+  // 인터넷(Unifi)은 감사법인 원장에서 72510 Office internet으로 별도 계정이다
+  // (한때 5006과 합산되는 것으로 잘못 문서화되어 있었음 — 실제 auditCode는 아래
+  // 5034 정의를 참조).
   {id:'a5033',code:'5033',nameKr:'전기료',        nameEn:'Electricity',               type:'expense',auditCode:'72700'},
   {id:'a5034',code:'5034',nameKr:'인터넷',        nameEn:'Internet',                  type:'expense',auditCode:'72510'},
   // EPF — payroll.js의 ensurePayrollAccounts()도 같은 코드로 정의한다.
@@ -149,6 +150,11 @@ function ensureAuditChartAccounts() {
 
   // 5004 공과금은 예전 버전에서 72700(Electricity)을 달고 있었다. 이제 그 코드는
   // 세부 계정인 5033 전기료가 갖고, 5004는 총괄 계정으로 감사코드를 갖지 않는다.
+  // 5034 인터넷의 영문명이 예전 설치본에는 5006과 같은 'Communication'으로
+  // 남아있는 경우가 있다(계정은 만들어지고 나면 코드가 이름을 다시 안 고침).
+  // 표시·검색 모두 nameEn을 쓰므로 여기서 명시적으로 맞춰준다.
+  const internet = DB.accounts.find(a => a.code === '5034');
+  if (internet && internet.nameEn !== 'Internet') { internet.nameEn = 'Internet'; changed = true; }
   const umbrella = DB.accounts.find(a => a.code === '5004');
   if (umbrella && umbrella.auditCode) { delete umbrella.auditCode; changed = true; }
 

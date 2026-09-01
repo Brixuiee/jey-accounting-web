@@ -149,6 +149,10 @@ const AUDIT_DETAIL_ACCOUNTS = [
   {id:'a5054',code:'5054',nameKr:'인허가수수료',      nameEn:'Licence Fees',               type:'expense',auditCode:'70920'},
   {id:'a5056',code:'5056',nameKr:'감사보수',          nameEn:'Audit Fee',                  type:'expense',auditCode:'71000'},
   {id:'a5057',code:'5057',nameKr:'의료비',            nameEn:'Medical Fee',                type:'expense',auditCode:'74600'},
+  // 2026-09 추가: 감사보고서(AF2025) 대조 결과 기초잔액에서 뭉뚱그려져 있던
+  // 항목을 세분화하기 위해 신설.
+  {id:'a1011',code:'1011',nameKr:'미수법인세',        nameEn:'Income Tax Recoverable',     type:'asset'},
+  {id:'a2018',code:'2018',nameKr:'기타미지급금',      nameEn:'Other Payables',             type:'liability'},
 ];
 
 // Idempotent — safe to run on every load. Returns true if anything changed.

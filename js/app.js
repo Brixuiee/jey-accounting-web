@@ -126,6 +126,17 @@ const AUDIT_DETAIL_ACCOUNTS = [
   {id:'a5045',code:'5045',nameKr:'기부·선물',     nameEn:'Gifts & Donations',         type:'expense',auditCode:'73600'},
   {id:'a5046',code:'5046',nameKr:'유지보수',      nameEn:'Maintenance',               type:'expense',auditCode:'73700'},
   {id:'a5047',code:'5047',nameKr:'사무실·기기 관리',nameEn:'Upkeep of Office & Equipment',type:'expense',auditCode:'73710'},
+  // 2026-08 추가: EPF를 회사부담분(기존 5013)/직원부담분/통합납부로 세분화하고
+  // 연체료 계정을 신설. 은행수수료(기존 5009)도 SST·이체수수료를 별도 계정으로
+  // 분리 — 은행 명세서에 'SERVICE TAX 8%', 'OTHER TRANSFER FEE'처럼 성격이 다른
+  // 항목이 뭉뚱그려 잡히던 것을 갈라내기 위함. 감사법인 원장에 대응 계정이 없어
+  // auditCode는 비워둔다.
+  {id:'a5048',code:'5048',nameKr:'EPF 직원부담분',    nameEn:'EPF Contribution (Employee)',type:'expense'},
+  {id:'a5049',code:'5049',nameKr:'EPF 통합납부',      nameEn:'EPF Contribution (Combined)',type:'expense'},
+  {id:'a5050',code:'5050',nameKr:'EPF 연체료',        nameEn:'EPF Late Payment Charge',    type:'expense'},
+  {id:'a5051',code:'5051',nameKr:'은행 SST',          nameEn:'Bank SST Tax',               type:'expense'},
+  {id:'a5052',code:'5052',nameKr:'계좌이체 수수료',    nameEn:'Bank Transfer Fee',          type:'expense'},
+  {id:'a4007',code:'4007',nameKr:'세금환급',          nameEn:'Tax Refund',                 type:'revenue'},
 ];
 
 // Idempotent — safe to run on every load. Returns true if anything changed.

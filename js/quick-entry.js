@@ -21,6 +21,7 @@ const QE_TYPE_KEYWORDS = {
     /입금/, /수령/, /수금/, /회수/, /돈\s*받/, /송금\s*받/,
     /\breceipt(?!\s*for)/i, /received\s*from/i, /collected/i, /\bdeposit(?!\s*to)/i,
     /은행에?\s*들어옴/, /계좌에?\s*들어옴/,
+    /세금\s*환급/, /tax\s*refund/i, /환급금/,
   ],
   purchase: [
     /매입(?!채무)/, /청구서\s*받|청구서\s*수취|청구서(?!\s*없)/, /비용\s*청구/, /\bbill(?:ed)?\s*from|received/i,
@@ -28,11 +29,12 @@ const QE_TYPE_KEYWORDS = {
   ],
   payment: [
     /지급/, /송금(?!\s*받)/, /결제(?!\s*조건)/, /\bpay(?:ment|ing|aid)?\s+to/i, /\bpaid\b/i,
-    /송금했|이체했|결제했/, /\bremit/i, /\btransfer(?:red)?/i,
+    /송금했|이체했|결제했/, /\bremit/i, /\btransfer(?:red)?\b(?!\s*fee)/i,
   ],
   expense: [
     /통신비/, /임차료/, /공과금/, /운반비/, /택배/, /은행\s*수수료/, /수도세/, /전기세/,
     /\butilities\b/i, /\brent\b/i, /bank\s*charge/i, /\bcourier\b/i, /transport(?:ation)?/i,
+    /\bepf\b/i, /bank\s*(?:transfer\s*)?fee/i, /bank.*\bsst\b|\bsst\b.*bank/i, /계좌이체\s*수수료/,
   ],
 };
 
@@ -41,7 +43,13 @@ const QE_TYPE_KEYWORDS = {
 // use an array to ensure expense/revenue accounts are checked before cash/bank.
 const QE_ACCOUNT_KEYWORDS = [
   // Expenses (checked first)
+  ['5051', [/은행\s*sst/i, /bank\s*sst/i, /service\s*tax/i]],
+  ['5052', [/이체\s*수수료/, /transfer\s*fee/i, /telex/i, /handling\s*fee/i]],
   ['5009', [/은행\s*수수료/, /bank\s*(?:charge|fee)/i, /service\s*charge/i, /월\s*수수료/]],
+  ['5050', [/epf.*(?:late|연체)/i, /(?:late|연체).*epf/i]],
+  ['5049', [/epf.*(?:combined|통합)/i, /(?:combined|통합).*epf/i]],
+  ['5048', [/epf.*(?:employee|직원)/i, /(?:employee|직원).*epf/i]],
+  ['5013', [/epf.*(?:employer|회사)/i, /(?:employer|회사).*epf/i]],
   ['5003', [/임차료/, /임대료/, /\brent\b/i, /lease/i, /\boffice\s*rent\b/i]],
   ['5006', [/통신비/, /\bphone\b/i, /\binternet\b/i, /\bcelcom\b/i, /\bdigi\b/i, /\bmaxis\b/i, /\bunifi\b/i, /\btm\b/i, /telco/i]],
   ['5004', [/공과금/, /\butilit/i, /\btnb\b/i, /전기(?!세)|전기세/, /electric/i, /수도(?:세)?/, /\bwater\b/i, /sewerage/i, /indah\s*water/i]],
@@ -55,6 +63,7 @@ const QE_ACCOUNT_KEYWORDS = [
   ['4002', [/수수료\s*수익/, /수수료\s*매출/, /commission(?!\s*paid)/i, /broker/i, /수수료(?!\s*지급)/]],
   ['4001', [/매출(?!채권)(?!원가)(?!세)/, /\bsales\b/i, /제품판매/]],
   ['4003', [/기타\s*수익/, /이자\s*수익/, /interest\s*income/i, /\bother\s*income\b/i, /환차익/, /forex\s*gain/i]],
+  ['4007', [/세금\s*환급/, /tax\s*refund/i, /lhdn.*refund/i, /환급금/]],
   // Liabilities (checked before generic cash/bank so "미지급" wins)
   ['2005', [/미지급\s*급여/, /급여\s*미지급/, /salary\s*payable/i, /unpaid\s*salary/i, /accrued\s*salary/i]],
   ['2003', [/미지급\s*비용/, /accrued\s*expense/i]],

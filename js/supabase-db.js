@@ -226,6 +226,17 @@ async function initSupabaseData(_retried = false) {
       if (cloudAccounts.length > 0) {
         DB.accounts = cloudAccounts;
         console.log(`✅ 계정과목 ${cloudAccounts.length}개 로드됨`);
+        // The cloud snapshot can be older than this browser's app.js — e.g. a
+        // new default account shipped in a code update but no device has yet
+        // completed a login where the upload wins the race against this very
+        // fetch. ensureAuditChartAccounts() is idempotent (code-based), so
+        // re-running it here re-appends anything cloud is still missing and
+        // pushes the healed list back up — every login self-heals the cloud
+        // instead of the new accounts silently vanishing on each fetch.
+        if (typeof ensureAuditChartAccounts === 'function' && ensureAuditChartAccounts()) {
+          await _bulkUpsertAccounts(DB.accounts, userId);
+          console.log(`☁️ 계정과목 보정 업로드됨 (${DB.accounts.length}개)`);
+        }
       } else {
         await _bulkUpsertAccounts(DB.accounts, userId);
         console.log(`☁️ 계정과목 ${DB.accounts.length}개 업로드됨`);

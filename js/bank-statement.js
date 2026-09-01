@@ -188,6 +188,10 @@ function categorizeBankLine(line, bankAccId) {
     if (/interest|이자|dividend|배당/i.test(line.desc)) {
       return {action: 'create_income', accountCode: '4003', amount: line.deposit, description: line.desc, confidence: 0.9};
     }
+    // Tax refund (LHDN income tax / SST refund)?
+    if (/tax\s*refund|refund.*(?:lhdn|tax)|세금\s*환급|환급금/i.test(line.desc)) {
+      return {action: 'create_income', accountCode: '4007', amount: line.deposit, description: line.desc, confidence: 0.9};
+    }
     // Capital injection?
     if (/capital|investor|자본금|투자/i.test(line.desc)) {
       return {action: 'create_income', accountCode: '3001', amount: line.deposit, description: line.desc, confidence: 0.7, note: '자본금 입금 추정'};
@@ -198,8 +202,16 @@ function categorizeBankLine(line, bankAccId) {
 
   // (B) Withdrawal
   if (line.withdrawal > 0) {
-    // Bank charge?
-    if (/service\s*charge|monthly\s*fee|bank\s*charge|maintenance|biz.*banking|충전\s*수수료|월\s*수수료/i.test(line.desc)) {
+    // Bank SST tax (Malaysia 8% service tax charged on bank fees)?
+    if (/service\s*tax|bank.*\bsst\b|\bsst\b.*bank/i.test(line.desc)) {
+      return {action: 'create_expense', accountCode: '5051', amount: line.withdrawal, description: line.desc, confidence: 0.95, label: '은행 SST'};
+    }
+    // Bank transfer fee?
+    if (/transfer\s*fee|ibg\s*fee|\btelex\b|handling\s*fee|remittance\s*fee|이체\s*수수료/i.test(line.desc)) {
+      return {action: 'create_expense', accountCode: '5052', amount: line.withdrawal, description: line.desc, confidence: 0.9, label: '계좌이체 수수료'};
+    }
+    // Bank charge (general)?
+    if (/service\s*charge|month?ly\s*fee|mthly\s*fee|bank\s*charge|maintenance|biz.*banking|bizchannel|half\s*yearly\s*charge|충전\s*수수료|월\s*수수료/i.test(line.desc)) {
       return {action: 'create_expense', accountCode: '5009', amount: line.withdrawal, description: line.desc, confidence: 0.95, label: '은행 수수료'};
     }
     // Direct debit utilities

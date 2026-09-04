@@ -84,22 +84,41 @@ async function loadEntriesFromSupabase(opts = {}) {
   const session = await getSupabaseSession();
   if (!session) return null;
 
-  let query = _supabase
-    .from('entries')
-    .select('id, entry_date, description, ref, lines')
-    .order('entry_date', { ascending: false });
+  // PostgREST caps rows per request (this project: 1000) regardless of the
+  // client library, so past 1000 entries a single unpaginated query silently
+  // truncates — DB.entries = cloudEntries then drops the rest on every login.
+  // Page through with .range() until a page comes back short, unless the
+  // caller passed an explicit opts.limit (then honor that as a hard cap).
+  const PAGE = 1000;
+  let all = [];
+  let offset = 0;
+  while (true) {
+    let query = _supabase
+      .from('entries')
+      .select('id, entry_date, description, ref, lines')
+      .order('entry_date', { ascending: false });
 
-  if (opts.fromDate) query = query.gte('entry_date', opts.fromDate);
-  if (opts.toDate)   query = query.lte('entry_date', opts.toDate);
-  if (opts.limit)    query = query.limit(opts.limit);
+    if (opts.fromDate) query = query.gte('entry_date', opts.fromDate);
+    if (opts.toDate)   query = query.lte('entry_date', opts.toDate);
 
-  const { data, error } = await query;
-  if (error) { console.warn('loadEntriesFromSupabase:', error.message); return null; }
+    const pageSize = opts.limit ? Math.min(PAGE, opts.limit - offset) : PAGE;
+    if (pageSize <= 0) break;
+    query = query.range(offset, offset + pageSize - 1);
 
-  return (data || []).map(r => ({
-    id: r.id, date: r.entry_date, description: r.description || '',
-    reference: r.ref || '', lines: r.lines
-  }));
+    const { data, error } = await query;
+    if (error) { console.warn('loadEntriesFromSupabase:', error.message); return offset === 0 ? null : all.map(_mapEntryRow); }
+
+    all = all.concat(data || []);
+    if (!data || data.length < pageSize) break;
+    offset += data.length;
+    if (opts.limit && offset >= opts.limit) break;
+  }
+
+  return all.map(_mapEntryRow);
+}
+
+function _mapEntryRow(r) {
+  return { id: r.id, date: r.entry_date, description: r.description || '', reference: r.ref || '', lines: r.lines };
 }
 
 async function _bulkUpsertEntries(entries, userId) {

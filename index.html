@@ -481,15 +481,33 @@
     <!-- GENERAL LEDGER -->
     <section id="section-ledger" class="section">
       <div class="section-header"><h1>General Ledger</h1></div>
-      <div class="filter-bar">
-        <select id="ledger-account" class="input" onchange="renderLedger()" style="width:280px">
-          <option value="">-- Select Account --</option>
-        </select>
-        <input type="month" id="ledger-from" class="input" onchange="renderLedger()" style="width:140px">
-        <span style="color:var(--text-muted)">to</span>
-        <input type="month" id="ledger-to" class="input" onchange="renderLedger()" style="width:140px">
+      <div class="filter-bar" style="gap:.5rem">
+        <button id="ledger-tab-detail" class="btn btn-primary" onclick="setLedgerMode('detail')">계정별 상세</button>
+        <button id="ledger-tab-summary" class="btn btn-outline" onclick="setLedgerMode('summary')">전체 요약</button>
       </div>
-      <div class="card" id="ledger-content"><p class="empty-msg">Select an account to view ledger.</p></div>
+
+      <div id="ledger-detail-view">
+        <div class="filter-bar">
+          <select id="ledger-account" class="input" onchange="renderLedger()" style="width:280px">
+            <option value="">-- Select Account --</option>
+          </select>
+          <input type="month" id="ledger-from" class="input" onchange="renderLedger()" style="width:140px">
+          <span style="color:var(--text-muted)">to</span>
+          <input type="month" id="ledger-to" class="input" onchange="renderLedger()" style="width:140px">
+        </div>
+        <div class="card" id="ledger-content"><p class="empty-msg">Select an account to view ledger.</p></div>
+      </div>
+
+      <div id="ledger-summary-view" style="display:none">
+        <div class="filter-bar">
+          <select id="ledger-summary-fy" class="input" style="width:260px" onchange="onFYRangeSelect('ledger-summary-fy','ledger-summary-from','ledger-summary-to',renderLedgerSummary)"></select>
+          <input type="date" id="ledger-summary-from" class="input" onchange="renderLedgerSummary()" style="width:150px">
+          <span style="color:var(--text-muted)">to</span>
+          <input type="date" id="ledger-summary-to" class="input" onchange="renderLedgerSummary()" style="width:150px">
+          <button class="btn btn-outline" onclick="printSection('ledger-summary-content')">Print</button>
+        </div>
+        <div class="report-container" id="ledger-summary-content"><p class="empty-msg">회계연도를 고르거나 기간을 직접 입력하세요.</p></div>
+      </div>
     </section>
 
     <!-- AR: CUSTOMERS -->
@@ -920,6 +938,7 @@
       <div class="section-header">
         <h1>Profit &amp; Loss Statement</h1>
         <div style="display:flex;gap:.75rem;align-items:center">
+          <select id="pl-fy" class="input" style="width:230px" onchange="onFYRangeSelect('pl-fy','pl-from','pl-to',renderPL)"></select>
           <input type="date" id="pl-from" class="input" style="width:150px">
           <span style="color:var(--text-muted)">to</span>
           <input type="date" id="pl-to" class="input" style="width:150px">
@@ -935,6 +954,7 @@
       <div class="section-header">
         <h1>Balance Sheet</h1>
         <div style="display:flex;gap:.75rem;align-items:center">
+          <select id="bs-fy" class="input" style="width:230px" onchange="onFYDateSelect('bs-fy','bs-date',renderBS)"></select>
           <input type="date" id="bs-date" class="input" style="width:150px">
           <button class="btn btn-primary" onclick="renderBS()">Generate</button>
           <button class="btn btn-outline" onclick="printSection('bs-report')">Print</button>
@@ -948,6 +968,7 @@
       <div class="section-header">
         <h1>Trial Balance</h1>
         <div style="display:flex;gap:.75rem;align-items:center">
+          <select id="trial-fy" class="input" style="width:230px" onchange="onFYDateSelect('trial-fy','trial-date',renderTrial)"></select>
           <input type="date" id="trial-date" class="input" style="width:150px">
           <button class="btn btn-primary" onclick="renderTrial()">Generate</button>
           <button class="btn btn-outline" onclick="printSection('trial-report')">Print</button>
@@ -1944,7 +1965,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-auth.js?v=4"></script>
-<script src="js/app.js?v=5"></script>
+<script src="js/app.js?v=6"></script>
 <script src="js/supabase-db.js?v=11"></script>
 <script src="js/ar.js"></script>
 <script src="js/ap.js"></script>

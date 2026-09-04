@@ -437,6 +437,75 @@ function accountBalanceRange(accountId, fromDate, toDate) {
   return {dr, cr};
 }
 
+// Balance strictly before fromDate (i.e. "brought forward" for a period starting fromDate)
+function openingBalance(accountId, fromDate) {
+  const acc = getAccount(accountId);
+  if (!acc) return 0;
+  let dr=0, cr=0;
+  for (const entry of DB.entries) {
+    if (entry.date >= fromDate) continue;
+    for (const line of entry.lines) {
+      if (line.accountId === accountId) { dr += Number(line.debit||0); cr += Number(line.credit||0); }
+    }
+  }
+  return acc.contra ? cr-dr : (normalBalance(acc.type)==='debit' ? dr-cr : cr-dr);
+}
+
+function signedMovement(acc, dr, cr) {
+  return acc.contra ? cr-dr : (normalBalance(acc.type)==='debit' ? dr-cr : cr-dr);
+}
+
+// ── Fiscal year helpers (shared by Ledger Summary / P&L / BS / Trial Balance) ──
+function fiscalYears() {
+  const fyStart = DB.settings.fiscalYearStart || '07-01';
+  const [mm, dd] = fyStart.split('-').map(Number);
+  const dates = (DB.entries||[]).map(e=>e.date).filter(Boolean).sort();
+  if (!dates.length) return [];
+  const minDate = dates[0], maxDate = dates[dates.length-1];
+  const minYear = Number(minDate.slice(0,4)) - 1;
+  const maxYear = Number(maxDate.slice(0,4)) + 1;
+  const out = [];
+  for (let y = maxYear; y >= minYear; y--) {
+    const from = `${y}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    const endD = new Date(y+1, mm-1, dd); endD.setDate(endD.getDate()-1);
+    const to = endD.toISOString().slice(0,10);
+    if (to < minDate || from > maxDate) continue;
+    const label = (mm===1 && dd===1) ? `${y}` : `FY${y}-${String((y+1)%100).padStart(2,'0')} (${from} ~ ${to})`;
+    out.push({from, to, label});
+  }
+  return out;
+}
+
+function populateFYSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const fys = fiscalYears();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- 회계연도 선택 (또는 직접 입력) --</option>' +
+    fys.map((f,i)=>`<option value="${i}">${f.label}</option>`).join('');
+  sel._fyData = fys;
+  if (cur && Number(cur) < fys.length) sel.value = cur;
+}
+
+function onFYRangeSelect(selectId, fromId, toId, renderFn) {
+  const sel = document.getElementById(selectId);
+  if (!sel || sel.value === '') return;
+  const fy = sel._fyData[Number(sel.value)];
+  if (!fy) return;
+  document.getElementById(fromId).value = fy.from;
+  document.getElementById(toId).value = fy.to;
+  renderFn();
+}
+
+function onFYDateSelect(selectId, dateId, renderFn) {
+  const sel = document.getElementById(selectId);
+  if (!sel || sel.value === '') return;
+  const fy = sel._fyData[Number(sel.value)];
+  if (!fy) return;
+  document.getElementById(dateId).value = fy.to;
+  renderFn();
+}
+
 // ── Navigation ────────────────────────────────────────
 function showSection(name) {
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -450,11 +519,11 @@ function showSection(name) {
   if (name==='dashboard') renderDashboard();
   if (name==='accounts')  renderAccounts();
   if (name==='journal')   renderJournal();
-  if (name==='ledger')    renderLedger();
+  if (name==='ledger')    { renderLedger(); populateFYSelect('ledger-summary-fy'); }
   if (name==='assets')    renderAssets();
-  if (name==='pl')        { setDefaultDates(); renderPL(); }
-  if (name==='bs')        { setDefaultDates(); renderBS(); }
-  if (name==='trial')     { setDefaultDates(); renderTrial(); }
+  if (name==='pl')        { setDefaultDates(); populateFYSelect('pl-fy'); renderPL(); }
+  if (name==='bs')        { setDefaultDates(); populateFYSelect('bs-fy'); renderBS(); }
+  if (name==='trial')     { setDefaultDates(); populateFYSelect('trial-fy'); renderTrial(); }
   if (name==='ar-customers') renderCustomers();
   if (name==='ar-invoices')  renderInvoices();
   if (name==='ar-receipts')  renderReceipts();
@@ -955,6 +1024,67 @@ function renderLedger() {
         ${rows.join('')||'<tr><td colspan="6" class="empty-msg">거래 없음</td></tr>'}
       </tbody>
     </table>`;
+}
+
+// ── General Ledger Summary (all accounts, one period) ─────────────
+function setLedgerMode(mode) {
+  document.getElementById('ledger-detail-view').style.display = mode==='detail' ? '' : 'none';
+  document.getElementById('ledger-summary-view').style.display = mode==='summary' ? '' : 'none';
+  const detailBtn = document.getElementById('ledger-tab-detail');
+  const summaryBtn = document.getElementById('ledger-tab-summary');
+  detailBtn.className = 'btn ' + (mode==='detail' ? 'btn-primary' : 'btn-outline');
+  summaryBtn.className = 'btn ' + (mode==='summary' ? 'btn-primary' : 'btn-outline');
+  if (mode==='summary') {
+    populateFYSelect('ledger-summary-fy');
+    renderLedgerSummary();
+  }
+}
+
+function renderLedgerSummary() {
+  const from = document.getElementById('ledger-summary-from').value;
+  const to   = document.getElementById('ledger-summary-to').value;
+  const content = document.getElementById('ledger-summary-content');
+  if (!from || !to) { content.innerHTML = '<p class="empty-msg">기간을 선택하거나 회계연도를 고르세요.</p>'; return; }
+
+  const rows = DB.accounts.slice().sort((a,b)=>a.code.localeCompare(b.code)).map(acc=>{
+    const opening = openingBalance(acc.id, from);
+    const {dr, cr} = accountBalanceRange(acc.id, from, to);
+    const closing = opening + signedMovement(acc, dr, cr);
+    return {acc, opening, dr, cr, closing};
+  }).filter(r => r.opening!==0 || r.dr!==0 || r.cr!==0 || r.closing!==0);
+
+  const totDR = rows.reduce((s,r)=>s+r.dr,0);
+  const totCR = rows.reduce((s,r)=>s+r.cr,0);
+
+  content.innerHTML = `
+    <div class="report-title">
+      <h2>JEY &amp; Company SB</h2>
+      <p>총계정원장 요약 (General Ledger Summary)</p>
+      <p>${from} ~ ${to}</p>
+    </div>
+    <table class="table">
+      <thead><tr><th>코드</th><th>계정과목</th><th>구분</th><th class="num">전기이월</th><th class="num">차변합계</th><th class="num">대변합계</th><th class="num">기말잔액</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td>${r.acc.code}</td>
+          <td>${r.acc.nameKr}</td>
+          <td><span class="tag tag-${r.acc.type}">${TYPE_LABELS[r.acc.type]}</span></td>
+          <td class="num">${fmtN(r.opening)}</td>
+          <td class="num dr">${r.dr>0?fmtN(r.dr):''}</td>
+          <td class="num cr">${r.cr>0?fmtN(r.cr):''}</td>
+          <td class="num" style="font-weight:600">${fmtN(r.closing)}</td>
+        </tr>`).join('') || '<tr><td colspan="7" class="empty-msg">해당 기간 거래 없음</td></tr>'}
+        <tr style="font-weight:700;border-top:2px solid var(--text)">
+          <td colspan="4">합계 (기간 중 발생액)</td>
+          <td class="num dr">${fmtN(totDR)}</td>
+          <td class="num cr">${fmtN(totCR)}</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="report-balance-check ${Math.abs(totDR-totCR)<0.01?'report-balance-ok':'report-balance-fail'}">
+      ${Math.abs(totDR-totCR)<0.01 ? '✅ 차변 = 대변 (균형)' : '⚠️ 차변 ≠ 대변 — 전표를 확인하세요.'}
+    </div>`;
 }
 
 function populateLedgerSelect() {

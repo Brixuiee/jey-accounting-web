@@ -96,7 +96,12 @@ async function loadEntriesFromSupabase(opts = {}) {
     let query = _supabase
       .from('entries')
       .select('id, entry_date, description, ref, lines')
-      .order('entry_date', { ascending: false });
+      // entry_date alone isn't unique (many rows share the same date, e.g.
+      // month-end accruals) — .range() pagination across separate requests
+      // needs a fully deterministic order or ties can shift between pages,
+      // silently dropping (or duplicating) rows at page boundaries.
+      .order('entry_date', { ascending: false })
+      .order('id', { ascending: true });
 
     if (opts.fromDate) query = query.gte('entry_date', opts.fromDate);
     if (opts.toDate)   query = query.lte('entry_date', opts.toDate);

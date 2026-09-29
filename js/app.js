@@ -467,7 +467,11 @@ function fiscalYears() {
   const out = [];
   for (let y = maxYear; y >= minYear; y--) {
     const from = `${y}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-    const endD = new Date(y+1, mm-1, dd); endD.setDate(endD.getDate()-1);
+    // UTC-based construction avoids local-timezone drift: new Date(y,m,d) +
+    // toISOString() shifts the date back a day in any timezone ahead of UTC
+    // (e.g. Malaysia, UTC+8), silently excluding the fiscal year's last day
+    // from every report that uses this FY dropdown.
+    const endD = new Date(Date.UTC(y+1, mm-1, dd)); endD.setUTCDate(endD.getUTCDate()-1);
     const to = endD.toISOString().slice(0,10);
     if (to < minDate || from > maxDate) continue;
     const label = (mm===1 && dd===1) ? `${y}` : `FY${y}-${String((y+1)%100).padStart(2,'0')} (${from} ~ ${to})`;

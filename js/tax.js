@@ -429,24 +429,29 @@ function renderTaxCalendar() {
     // CP58
     {date: `${currentYear}-03-31`, type:'CP58', title:'CP58 — 수수료 지급 신고서 (전년도 지급분)', critical:true, agency:'LHDN'},
     // CP204 — 30 days before basis period
-    {date: new Date(fyStart.getTime() - 30*86400000).toISOString().slice(0,10), type:'CP204', title:`CP204 — Estimated Tax Payable (YA${currentYear})`, critical:true, agency:'LHDN'},
+    {date: fmtLocalDate(new Date(fyStart.getTime() - 30*86400000)), type:'CP204', title:`CP204 — Estimated Tax Payable (YA${currentYear})`, critical:true, agency:'LHDN'},
     // CP204A — 6th month of basis period
-    {date: new Date(fyStart.getFullYear(), fyStart.getMonth()+5, fyStart.getDate()).toISOString().slice(0,10), type:'CP204A', title:'CP204A — Revision of Estimated Tax', critical:false, agency:'LHDN'},
+    {date: fmtLocalDate(new Date(fyStart.getFullYear(), fyStart.getMonth()+5, fyStart.getDate())), type:'CP204A', title:'CP204A — Revision of Estimated Tax', critical:false, agency:'LHDN'},
     // Form C — 7 months after FY end
-    {date: new Date(prevFyEnd.getFullYear(), prevFyEnd.getMonth()+7, prevFyEnd.getDate()).toISOString().slice(0,10), type:'FORM_C', title:'Form C — Corporate Income Tax Return (YA' + prevFyEnd.getFullYear() + ')', critical:true, agency:'LHDN'},
+    {date: fmtLocalDate(new Date(prevFyEnd.getFullYear(), prevFyEnd.getMonth()+7, prevFyEnd.getDate())), type:'FORM_C', title:'Form C — Corporate Income Tax Return (YA' + prevFyEnd.getFullYear() + ')', critical:true, agency:'LHDN'},
     // Form E — Feb 28/29 (employer return)
     {date: `${currentYear}-02-28`, type:'FORM_E', title:'Form E — Employer Annual Return', critical:true, agency:'LHDN'},
     // Form EA — Feb 28 (employee statement)
     {date: `${currentYear}-02-28`, type:'FORM_EA', title:'Form EA — Employee Statement (직원에게 발급)', critical:true, agency:'LHDN'},
     // PCB — 15th of next month (if any employees)
-    {date: today_.toISOString().slice(0,8) + '15', type:'PCB', title:'PCB Monthly — 직원 원천징수세 납부', critical:false, agency:'LHDN', recurring:true},
+    {date: `${today_.getFullYear()}-${String(today_.getMonth()+1).padStart(2,'0')}-15`, type:'PCB', title:'PCB Monthly — 직원 원천징수세 납부', critical:false, agency:'LHDN', recurring:true},
     // EPF / SOCSO / EIS — 15th
-    {date: today_.toISOString().slice(0,8) + '15', type:'EPF', title:'EPF / SOCSO / EIS — 사회보장 납부', critical:false, agency:'KWSP/PERKESO', recurring:true},
+    {date: `${today_.getFullYear()}-${String(today_.getMonth()+1).padStart(2,'0')}-15`, type:'EPF', title:'EPF / SOCSO / EIS — 사회보장 납부', critical:false, agency:'KWSP/PERKESO', recurring:true},
   ];
 
-  // Sort by date and compute days remaining
+  // Sort by date and compute days remaining. Both sides must be local
+  // midnight: `new Date('YYYY-MM-DD')` parses as UTC midnight, so comparing
+  // it straight against `today_` (a local "now" moment) mislabels events
+  // near local midnight in any timezone ahead of UTC.
+  const todayMidnight = new Date(today_.getFullYear(), today_.getMonth(), today_.getDate());
   const upcoming = events.map(e=>{
-    const daysLeft = Math.ceil((new Date(e.date) - today_) / 86400000);
+    const [ey, em, ed] = e.date.split('-').map(Number);
+    const daysLeft = Math.round((new Date(ey, em-1, ed) - todayMidnight) / 86400000);
     return {...e, daysLeft};
   }).filter(e => e.daysLeft >= -7 && e.daysLeft <= 365)
     .sort((a,b)=>a.daysLeft - b.daysLeft);
@@ -474,7 +479,7 @@ function renderTaxCalendar() {
     <div class="report-title">
       <h2>${DB.settings.companyName}</h2>
       <p>📅 Tax Calendar / 세무 일정</p>
-      <p style="font-size:.78rem;color:var(--text-muted)">기준일: ${today_.toISOString().slice(0,10)} · 회계연도: ${(fyStart.toISOString().slice(0,10))} ~ ${fyEnd.toISOString().slice(0,10)}</p>
+      <p style="font-size:.78rem;color:var(--text-muted)">기준일: ${fmtLocalDate(today_)} · 회계연도: ${fmtLocalDate(fyStart)} ~ ${fmtLocalDate(fyEnd)}</p>
     </div>
     <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);gap:.5rem;margin:1rem 0">
       <div class="stat-card" style="border-left:4px solid #dc2626"><div class="label">🚨 기한 지남</div><div class="value" style="color:#dc2626">${overdue.length}건</div></div>

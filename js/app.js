@@ -8,8 +8,12 @@
 const uid  = () => Math.random().toString(36).slice(2,10);
 const fmt  = (n) => 'MYR ' + Number(n||0).toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
 const fmtN = (n) => Number(n||0).toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
-const today = () => new Date().toISOString().slice(0,10);
-const nowMonth = () => new Date().toISOString().slice(0,7);
+// Local-calendar-date formatting, not toISOString(): toISOString() converts
+// to UTC, which in any timezone ahead of UTC (e.g. Malaysia, UTC+8) rolls
+// the date back a day for roughly the first 8h of each local day.
+const fmtLocalDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today = () => fmtLocalDate(new Date());
+const nowMonth = () => today().slice(0,7);
 
 // ── Default Data ──────────────────────────────────────
 const DEFAULT_ACCOUNTS = [

@@ -1268,12 +1268,23 @@ function renderPL() {
 }
 
 // ── Balance Sheet ─────────────────────────────────────
+// The fiscal year (e.g. Jul 1 - Jun 30) start date that contains `dateStr`.
+function fiscalYearStartFor(dateStr) {
+  const fyStart = DB.settings.fiscalYearStart || '07-01';
+  const [mm, dd] = fyStart.split('-').map(Number);
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const y2 = (m > mm || (m === mm && d >= dd)) ? y : y - 1;
+  return `${y2}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+}
+
 function renderBS() {
   const date = document.getElementById('bs-date').value;
   if (!date) return;
 
-  // P&L from start of year to date
-  const yearStart = date.slice(0,4)+'-01-01';
+  // P&L from start of FISCAL year (not calendar year) to date — using
+  // calendar Jan 1 here undercounted "당기순이익" for any BS date in the
+  // second half of a Jul-Jun fiscal year, causing Assets != Liabilities+Equity.
+  const yearStart = fiscalYearStartFor(date);
   const revAccs = DB.accounts.filter(a=>a.type==='revenue');
   const expAccs = DB.accounts.filter(a=>a.type==='expense');
   const ytdRev = revAccs.reduce((s,a)=>{const {dr,cr}=accountBalanceRange(a.id,yearStart,date);return s+cr-dr;},0);

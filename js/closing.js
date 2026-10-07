@@ -121,13 +121,16 @@ function computeClosingChecklist(fyStart, fyEnd) {
     message: `DR ${fmtN(totalDr)} vs CR ${fmtN(totalCr)} (차이: ${fmtN(Math.abs(totalDr-totalCr))})`,
   });
 
-  // 2. Depreciation entries for each month of FY
-  const fyYears = (new Date(fyEnd) - new Date(fyStart)) / 86400000 / 30; // approx months
-  const depEntries = DB.entries.filter(e => e.date >= fyStart && e.date <= fyEnd && (e.description||'').includes('감가상각'));
+  // 2. Depreciation: posted vs expected for the FY
+  const depAcc = DB.accounts.find(a=>a.code==='5008');
+  const depPosted = depAcc ? accountBalanceRange(depAcc.id, fyStart, fyEnd).dr - accountBalanceRange(depAcc.id, fyStart, fyEnd).cr : 0;
+  const dayBefore = new Date(Date.UTC(Number(fyStart.slice(0,4)), Number(fyStart.slice(5,7))-1, Number(fyStart.slice(8,10))-1)).toISOString().slice(0,10);
+  const depExpected = DB.assets.filter(a => (a.status||'active')==='active')
+    .reduce((s,a)=> s + Math.max(0, computeAssetDep(a, fyEnd).accDep - computeAssetDep(a, dayBefore).accDep), 0);
   checks.push({
-    title: '감가상각 분개 누락 점검 (월별)',
-    status: DB.assets.length === 0 ? 'ok' : (depEntries.length >= Math.floor(fyYears) ? 'ok' : 'warn'),
-    message: DB.assets.length === 0 ? '등록 자산 없음' : `${depEntries.length}건 / 예상 12건 — Fixed Assets → Post Depreciation 메뉴에서 누락 월 처리`,
+    title: '감가상각 계상 점검',
+    status: DB.assets.length === 0 ? 'ok' : (Math.abs(depExpected - depPosted) < 0.5 ? 'ok' : 'warn'),
+    message: DB.assets.length === 0 ? '등록 자산 없음' : `계상 MYR ${fmtN(depPosted)} / 자산대장 기준 당기 상각액 MYR ${fmtN(depExpected)} — 차이 있으면 Fixed Assets → Post Depreciation 확인`,
   });
 
   // 3. AR Aging — overdue

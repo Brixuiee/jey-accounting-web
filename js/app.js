@@ -1209,7 +1209,15 @@ function postDepreciation() {
     const startDate = new Date(asset.purchaseDate);
     const entryDate = new Date(monthEnd);
     if (startDate > entryDate) continue;
-    const monthly = (asset.cost - asset.residual) / (asset.life * 12);
+    let monthly;
+    if ((asset.depHistory||[]).length && typeof computeAssetDep === 'function') {
+      // history-based assets: charge only what remains, so fully depreciated assets post nothing
+      const prevEnd = new Date(Date.UTC(Number(y), Number(m)-1, 0)).toISOString().slice(0,10);
+      monthly = Math.max(0, computeAssetDep(asset, monthEnd).accDep - computeAssetDep(asset, prevEnd).accDep);
+    } else {
+      monthly = (asset.cost - asset.residual) / (asset.life * 12);
+    }
+    if (monthly <= 0.004) continue;
     totalDep += monthly;
     descParts.push(`${asset.name}: MYR ${fmtN(monthly)}`);
   }

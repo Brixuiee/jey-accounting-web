@@ -41,10 +41,38 @@ function nextAssetCode(category='OTHER') {
   return `${prefix}${String(n).padStart(3,'0')}`;
 }
 
+function _monthsBetween(fromStr, toStr) {
+  const f = fromStr.split('-').map(Number), t = toStr.split('-').map(Number);
+  return Math.max(0, (t[0]-f[0])*12 + (t[1]-f[1]));
+}
+
+// Assets migrated from a prior system carry an actual depreciation history
+// ([{period, date, amount, accDep}], accDep = cumulative at `date`). Accumulated
+// depreciation as of any date = last history point on/before it, plus straight-line
+// months since then, capped at the depreciable base. Fully depreciated assets stay
+// registered (status 'active') so the history remains visible.
+function computeAssetDepFromHistory(asset, asOfDate) {
+  const hist = (asset.depHistory||[]).filter(h=>h.date).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const base = Math.max(0, Number(asset.cost||0) - Number(asset.residual||0));
+  const totalMonths = asset.life * 12;
+  const monthlyFull = totalMonths > 0 ? base / totalMonths : 0;
+  let last = null;
+  for (const h of hist) if (h.date <= asOfDate) last = h;
+  let accDep;
+  if (!last) accDep = 0;
+  else accDep = Math.min(Number(last.accDep||0) + _monthsBetween(last.date, asOfDate) * monthlyFull, base);
+  const fullyDepreciated = accDep >= base - 0.005;
+  const monthlyDep = fullyDepreciated ? 0 : monthlyFull;
+  const bookValue = Number(asset.cost||0) - accDep;
+  const pct = base > 0 ? Math.round((accDep / base) * 100) : 0;
+  return {monthlyDep, accDep, bookValue, pct, depreciableBase: base, fullyDepreciated};
+}
+
 // Compute accounting depreciation up to a given date
 function computeAssetDep(asset, asOfDate=null) {
   if (!asset) return null;
   asOfDate = asOfDate || today();
+  if ((asset.depHistory||[]).length) return computeAssetDepFromHistory(asset, asOfDate);
   const start = new Date(asset.purchaseDate);
   const end = new Date(asOfDate);
   const monthsElapsed = Math.max(0, (end.getFullYear()-start.getFullYear())*12 + (end.getMonth()-start.getMonth()));
@@ -87,7 +115,22 @@ function computeAssetDep(asset, asOfDate=null) {
 
   const bookValue = Number(asset.cost||0) - accDep;
   const pct = depreciableBase > 0 ? Math.round((accDep / depreciableBase) * 100) : 0;
-  return {monthlyDep, accDep, bookValue, pct, depreciableBase};
+  return {monthlyDep, accDep, bookValue, pct, depreciableBase, fullyDepreciated: depreciableBase > 0 && accDep >= depreciableBase - 0.005};
+}
+
+function renderDepHistoryHtml(asset) {
+  const hist = (asset.depHistory||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if (!hist.length) return '';
+  return `<details style="margin-top:.5rem"><summary style="cursor:pointer;font-size:.78rem;color:var(--primary-lt)">📜 감가상각 이력 (${hist.length}건)</summary>
+    <table class="table" style="font-size:.74rem;margin-top:.4rem">
+      <thead><tr><th>회계연도</th><th>일자</th><th class="num">상각액</th><th class="num">누계상각</th><th class="num">장부가액</th><th>출처</th></tr></thead>
+      <tbody>${hist.map(h=>`<tr>
+        <td>${h.period||''}</td><td>${h.date||''}</td>
+        <td class="num">${h.amount!=null?fmtN(h.amount):'—'}</td>
+        <td class="num">${fmtN(h.accDep)}</td>
+        <td class="num">${fmtN(Number(asset.cost||0)-Number(h.accDep||0))}</td>
+        <td style="color:var(--text-muted)">${h.source||''}</td></tr>`).join('')}</tbody>
+    </table></details>`;
 }
 
 // Compute Malaysian Capital Allowance (tax depreciation)
@@ -157,9 +200,10 @@ function renderAssetsV2() {
             <span style="font-size:.7rem;background:#f1f5f9;padding:.15rem .4rem;border-radius:3px;color:#475569;font-family:monospace">${asset.code||'—'}</span>
             <span style="font-size:.7rem;background:#dbeafe;padding:.15rem .4rem;border-radius:3px;color:#1e40af">${cat.nameKr}</span>
             <span style="font-size:.7rem;background:${stCfg.color}22;padding:.15rem .4rem;border-radius:3px;color:${stCfg.color};font-weight:600">${stCfg.label}</span>
+            ${dep.fullyDepreciated && status==='active' ? '<span style="font-size:.7rem;background:#e2e8f0;padding:.15rem .4rem;border-radius:3px;color:#475569;font-weight:600">상각 완료</span>' : ''}
           </div>
           <div class="asset-meta" style="margin-top:.2rem">
-            취득일: ${asset.purchaseDate} · 내용연수: ${asset.life}년 · ${DEPRECIATION_METHODS[asset.method||'straight-line'].label}
+            취득일: ${asset.purchaseDateApprox ? '미상 (~' + asset.purchaseDate + ' 이전)' : asset.purchaseDate} · 내용연수: ${asset.life}년 · ${DEPRECIATION_METHODS[asset.method||'straight-line'].label}
             ${asset.serialNo?` · S/N: ${asset.serialNo}`:''}${asset.location?` · 위치: ${asset.location}`:''}
           </div>
         </div>
@@ -188,6 +232,7 @@ function renderAssetsV2() {
         🗑 ${asset.disposalDate||''} 폐기 — 폐기손실 MYR ${fmtN(Math.abs(asset.disposalGainLoss||0))}
       </div>` : ''}
       ${asset.note ? `<div style="font-size:.72rem;color:var(--text-muted);margin-top:.4rem;font-style:italic">${asset.note}</div>` : ''}
+      ${renderDepHistoryHtml(asset)}
     </div>`;
   }).join('');
 
@@ -203,7 +248,7 @@ function renderAssetSummary() {
   const totalBV = totalCost - totalDep;
   const monthlyDep = active.reduce((s,a)=>s+computeAssetDep(a).monthlyDep,0);
   el.innerHTML = `
-    <div class="stat-card"><div class="label">활성 자산 수</div><div class="value">${active.length}개</div></div>
+    <div class="stat-card"><div class="label">활성 자산 수</div><div class="value">${active.length}개</div><div style="font-size:.7rem;color:var(--text-muted)">상각 완료 ${active.filter(a=>computeAssetDep(a).fullyDepreciated).length}개 포함</div></div>
     <div class="stat-card"><div class="label">총 취득원가</div><div class="value">MYR ${fmtN(totalCost)}</div></div>
     <div class="stat-card"><div class="label">누계 감가상각</div><div class="value" style="color:var(--warning)">MYR ${fmtN(totalDep)}</div></div>
     <div class="stat-card"><div class="label">순 장부가액</div><div class="value" style="color:var(--primary-lt)">MYR ${fmtN(totalBV)}</div></div>
@@ -425,12 +470,12 @@ function renderAssetRegister() {
           <td style="font-family:monospace">${r.a.code||'—'}</td>
           <td>${r.a.name}${r.a.serialNo?`<div style="font-size:.65rem;color:var(--text-muted)">S/N: ${r.a.serialNo}</div>`:''}</td>
           <td>${r.cat.nameKr}</td>
-          <td>${r.a.purchaseDate}</td>
+          <td>${r.a.purchaseDateApprox ? '미상 (~'+r.a.purchaseDate+')' : r.a.purchaseDate}</td>
           <td class="num">${fmtN(r.a.cost)}</td>
           <td class="num">${fmtN(r.dep.accDep)}</td>
           <td class="num"><strong>${fmtN(r.dep.bookValue)}</strong></td>
           <td class="num">${fmtN(r.ca.totalToDate)}${r.ca.smallValue?'<br><span style="font-size:.65rem;color:#0ea572">SVA 100%</span>':''}</td>
-          <td>${ASSET_STATUS[r.a.status||'active'].label}</td>
+          <td>${ASSET_STATUS[r.a.status||'active'].label}${r.dep.fullyDepreciated && (r.a.status||'active')==='active' ? ' · 상각완료' : ''}</td>
         </tr>`).join('') || '<tr><td colspan="9" class="empty-msg">자산 없음</td></tr>'}
         <tr style="font-weight:700;border-top:2px solid var(--text);background:#f8fafc">
           <td colspan="4">Total / 합계</td>

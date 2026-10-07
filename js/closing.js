@@ -161,7 +161,17 @@ function computeClosingChecklist(fyStart, fyEnd) {
     message: taxAccrued > 0 ? `법인세비용 MYR ${fmtN(taxAccrued)} 계상됨` : 'Tax → Income Tax 메뉴에서 산출 + 충당금 분개 권장',
   });
 
-  // 6. Bank reconciliation
+  // 6. Pending (미결) transactions — must be cleared before closing
+  const pendingOpen = (DB.pendingEntries || []).filter(p => p.date && p.date <= fyEnd && (p.date >= fyStart || (p.description||'').includes('결산 미결')));
+  checks.push({
+    title: '미결건 정리 (미결거래 메뉴)',
+    status: pendingOpen.length === 0 ? 'ok' : 'error',
+    message: pendingOpen.length === 0
+      ? '미결건 없음'
+      : `미결 ${pendingOpen.length}건 남아 있음 — 마감 전에 정리하세요: ` + pendingOpen.map(p => (p.description||'').slice(0, 40)).join(' / '),
+  });
+
+  // 7. Bank reconciliation
   checks.push({
     title: '은행 잔액 대조',
     status: 'warn',
@@ -197,6 +207,9 @@ function executeYearEndClose(fyStart, fyEnd) {
   if (ni.revenueAccounts.length === 0 && ni.expenseAccounts.length === 0) {
     return alert('마감할 수익/비용 잔액이 없습니다.');
   }
+
+  const pendingOpen = (DB.pendingEntries || []).filter(p => p.date && p.date <= fyEnd && (p.date >= fyStart || (p.description||'').includes('결산 미결')));
+  if (pendingOpen.length && !confirm(`⚠ 미결건이 ${pendingOpen.length}건 남아 있습니다.\n\n${pendingOpen.map(p => '- ' + (p.description||'')).join('\n')}\n\n정리하지 않고 마감하시겠습니까?`)) return;
 
   // Check duplicate
   const existing = DB.entries.find(e => e.date === fyEnd && e.reference?.startsWith('CLOSE-'));
